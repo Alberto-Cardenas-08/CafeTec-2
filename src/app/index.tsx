@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -43,6 +43,8 @@ const categories = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -50,83 +52,100 @@ export default function HomeScreen() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Ionicons name="menu" size={32} color="#4e2918" />
+          {/* =========================
+              LOGO
+              ========================= */}
+
+          <View style={styles.logoWrap}>
             <Image
               source={require("@/assets/images/cafetecTrasnsparentepng.png")}
               style={styles.logo}
               contentFit="contain"
               accessibilityLabel="Cafetec logo"
             />
-            <View style={styles.cartContainer}>
-              <Ionicons name="cart-outline" size={28} color="#4e2918" />
-              <View style={styles.cartBadge}>
-                <ThemedText style={styles.cartBadgeText}>2</ThemedText>
-              </View>
-            </View>
           </View>
 
-          {/* TEXTO INTRODUCTORIO */}
+          {/* =========================
+              TÍTULO
+              ========================= */}
+
           <ThemedText type="title" style={styles.title}>
             Menú
           </ThemedText>
+
           <ThemedText style={styles.intro}>
-            Elige tu categoría y descubre{`\n`}tus favoritos
+            Elige tu categoría y descubre{"\n"}tus favoritos
           </ThemedText>
 
-          {/* CATEGORÍAS */}
+          {/* =========================
+              CATEGORÍAS
+              ========================= */}
+
           <View style={styles.categories}>
             {categories.map((category) => (
-              <Link key={category.title} href={category.route as never} asChild>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.category,
-                    { backgroundColor: category.color },
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  {/* Imagen del producto */}
-                  <Image
-                    source={category.image}
-                    style={styles.categoryImage}
-                    contentFit="contain"
-                  />
+              <Pressable
+                key={category.title}
+                onPress={() => router.push(category.route as never)}
+                style={({ pressed }) => [
+                  styles.category,
+                  {
+                    backgroundColor: category.color,
+                  },
+                  pressed && styles.pressed,
+                ]}
+              >
+                {/* =========================
+                    IMAGEN DEL PRODUCTO
+                    ========================= */}
 
-                  {/* Ícono circular */}
-                  <View style={styles.categoryIcon}>
-                    {category.iconType === "Ionicons" ? (
-                      <Ionicons
-                        name={category.iconName as any}
-                        size={28}
-                        color="#fffaf5"
-                      />
-                    ) : (
-                      <MaterialCommunityIcons
-                        name={category.iconName as any}
-                        size={28}
-                        color="#fffaf5"
-                      />
-                    )}
-                  </View>
+                <Image
+                  source={category.image}
+                  style={styles.categoryImage}
+                  contentFit="contain"
+                />
 
-                  {/* Título */}
-                  <View style={styles.categoryCopy}>
-                    <ThemedText style={styles.categoryTitle}>
-                      {category.title}
-                    </ThemedText>
-                  </View>
+                {/* =========================
+                    ICONO CIRCULAR
+                    ========================= */}
 
-                  {/* Flecha */}
-                  <View style={styles.arrowContainer}>
+                <View style={styles.categoryIcon}>
+                  {category.iconType === "Ionicons" ? (
                     <Ionicons
-                      name="chevron-forward"
-                      size={24}
-                      color={category.color}
+                      name={category.iconName as any}
+                      size={32}
+                      color="#fffaf5"
                     />
-                  </View>
-                </Pressable>
-              </Link>
+                  ) : (
+                    <MaterialCommunityIcons
+                      name={category.iconName as any}
+                      size={32}
+                      color="#fffaf5"
+                    />
+                  )}
+                </View>
+
+                {/* =========================
+                    TEXTO
+                    ========================= */}
+
+                <View style={styles.categoryCopy}>
+                  <ThemedText style={styles.categoryTitle}>
+                    {category.title}
+                  </ThemedText>
+                </View>
+
+                {/* =========================
+                    FLECHA
+                    ========================= */}
+
+                <View style={styles.arrowContainer}>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={28}
+                    color={category.color}
+                  />
+                </View>
+              </Pressable>
             ))}
           </View>
         </ScrollView>
@@ -136,110 +155,178 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  /* =========================
+     CONTENEDOR PRINCIPAL
+     ========================= */
+
   container: {
     flex: 1,
     backgroundColor: "#fbf6ef",
   },
+
   safeArea: {
     flex: 1,
-    maxWidth: 560,
     width: "100%",
+    maxWidth: 560,
     alignSelf: "center",
   },
+
   content: {
-    padding: 24,
-    paddingBottom: 110,
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    paddingBottom: 30,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 30,
-  },
-  logo: {
-    width: 160,
-    height: 80,
-  },
-  cartContainer: {
-    position: "relative",
-  },
-  cartBadge: {
-    position: "absolute",
-    top: -6,
-    right: -8,
-    backgroundColor: "#d07f30",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+
+  /* =========================
+     LOGO
+     ========================= */
+
+  logoWrap: {
+    width: "100%",
+    height: 190,
+
     alignItems: "center",
     justifyContent: "center",
+
+    marginBottom: 0,
   },
-  cartBadgeText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "bold",
+
+  logo: {
+    width: 500,
+    height: 200,
   },
+
+  /* =========================
+     TÍTULO
+     ========================= */
+
   title: {
     color: "#24150e",
-    fontSize: 32,
-    fontWeight: "bold",
+
+    fontSize: 34,
+    lineHeight: 40,
+
+    fontWeight: "700",
+
     marginBottom: 4,
   },
+
   intro: {
-    color: "#795e4d",
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 24,
+    color: "#6f594a",
+
+    fontSize: 18,
+    lineHeight: 26,
+
+    marginBottom: 14,
   },
+
+  /* =========================
+     LISTA DE CATEGORÍAS
+     ========================= */
+
   categories: {
-    gap: 16,
+    gap: 14,
   },
+
+  /* =========================
+     TARJETA
+     ========================= */
+
   category: {
+    width: "100%",
     height: 110,
-    borderRadius: 20,
-    paddingRight: 16,
+
+    borderRadius: 18,
+
     flexDirection: "row",
     alignItems: "center",
+
+    overflow: "hidden",
+
     shadowColor: "#000",
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 7,
+
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+
     elevation: 3,
   },
+
+  /* =========================
+     IMAGEN
+     ========================= */
+
   categoryImage: {
-    width: 100,
-    height: 100,
+    width: 125,
+    height: 110,
+
     marginLeft: 0,
-    marginRight: 10,
+    marginRight: 4,
   },
+
+  /* =========================
+     ICONO
+     ========================= */
+
   categoryIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 64,
+    height: 64,
+
+    borderRadius: 32,
+
     borderWidth: 1.5,
     borderColor: "#fffaf5",
+
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+
+    marginRight: 14,
   },
+
+  /* =========================
+     TEXTO DE LA CATEGORÍA
+     ========================= */
+
   categoryCopy: {
     flex: 1,
+
     justifyContent: "center",
   },
+
   categoryTitle: {
     color: "#fffaf5",
-    fontSize: 20,
+
+    fontSize: 23,
+    lineHeight: 27,
+
     fontWeight: "600",
-    lineHeight: 24,
   },
+
+  /* =========================
+     BOTÓN FLECHA
+     ========================= */
+
   arrowContainer: {
+    width: 45,
+    height: 45,
+
+    borderRadius: 23,
+
     backgroundColor: "#fffaf5",
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+
     alignItems: "center",
     justifyContent: "center",
+
+    marginRight: 16,
   },
+
+  /* =========================
+     EFECTO AL PRESIONAR
+     ========================= */
+
   pressed: {
     opacity: 0.8,
   },

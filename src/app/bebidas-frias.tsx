@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -5,42 +7,131 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 
-const drinks = [
-  { name: "Limonada natural", description: "Limones frescos con hielo", price: "$28", icon: "🍋" },
-  { name: "Te helado", description: "Te negro, limon y mucho hielo", price: "$30", icon: "🧋" },
-  { name: "Cold brew", description: "Cafe de extraccion lenta y frio", price: "$42", icon: "🧊" },
-  { name: "Smoothie de frutos rojos", description: "Frutos rojos, yogurt y miel", price: "$45", icon: "🍓" },
+const products = [
+  {
+    name: "Iced Coffee",
+    description: "Café frío con hielo.",
+    price: "$42",
+    image: require("@/assets/images/1-iced-coffe.png"),
+  },
+  {
+    name: "Iced Latte",
+    description: "Latte frío con hielo.",
+    price: "$45",
+    image: require("@/assets/images/2-iced-latte.png"),
+  },
+  {
+    name: "Té Helado",
+    description: "Té refrescante con hielo.",
+    price: "$35",
+    image: require("@/assets/images/3-te-helado.png"),
+  },
+  {
+    name: "Limonada Frutos Rojos",
+    description: "Limonada con mezcla de frutos rojos.",
+    price: "$38",
+    image: require("@/assets/images/4-limonada-frutos-rojos.png"),
+  },
+  {
+    name: "Limonada Natural",
+    description: "Limonada clásica y refrescante.",
+    price: "$32",
+    image: require("@/assets/images/5-limonada-natural.png"),
+  },
 ];
 
 export default function ColdDrinksScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.topBar}>
-            <Link href="/" asChild>
-              <Pressable><ThemedText style={styles.back}>‹</ThemedText></Pressable>
-            </Link>
-            <ThemedText style={styles.cart}>🛒</ThemedText>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* LOGO CAFETEC */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("@/assets/images/cafetecTrasnsparentepng.png")}
+              style={styles.logo}
+              contentFit="contain"
+              accessibilityLabel="Logo Cafetec"
+            />
           </View>
-          <View style={styles.heading}>
-            <ThemedText style={styles.headingIcon}>🥤</ThemedText>
-            <View>
-              <ThemedText style={styles.title}>Bebidas Frias</ThemedText>
-              <ThemedText style={styles.subtitle}>Refrescantes y preparadas al momento</ThemedText>
+
+          {/* HEADER */}
+          <View style={styles.header}>
+            <Link href="/" asChild>
+              <Pressable style={styles.backButton}>
+                <Ionicons name="arrow-back" size={34} color="#57301c" />
+              </Pressable>
+            </Link>
+
+            <ThemedText style={styles.title}>Bebidas Frías</ThemedText>
+
+            {/* Espacio para mantener el título centrado */}
+            <View style={styles.headerSpacer} />
+          </View>
+
+          {/* BANNER */}
+          <View style={styles.description}>
+            <View style={styles.descriptionImage}>
+              <Image
+                source={require("@/assets/images/Bebidas-frias.png")}
+                style={styles.descriptionImageInner}
+                contentFit="contain"
+              />
+            </View>
+
+            <View style={styles.descriptionText}>
+              <ThemedText style={styles.descriptionTitle}>
+                Bebidas Frías
+              </ThemedText>
+
+              <ThemedText style={styles.descriptionSubtitle}>
+                Refrescantes y preparadas al momento
+              </ThemedText>
             </View>
           </View>
-          <View style={styles.list}>
-            {drinks.map((drink) => (
-              <View key={drink.name} style={styles.product}>
-                <View style={styles.productIcon}><ThemedText style={styles.emoji}>{drink.icon}</ThemedText></View>
-                <View style={styles.productInfo}>
-                  <ThemedText style={styles.name}>{drink.name}</ThemedText>
-                  <ThemedText style={styles.description}>{drink.description}</ThemedText>
-                  <ThemedText style={styles.price}>{drink.price}</ThemedText>
+
+          {/* PRODUCTOS */}
+          <View style={styles.products}>
+            {products.map((product, index) => (
+              <Pressable
+                key={index}
+                style={({ pressed }) => [
+                  styles.product,
+                  pressed && styles.productPressed,
+                ]}
+              >
+                {/* IMAGEN DEL PRODUCTO */}
+                <View style={styles.productImageContainer}>
+                  <Image
+                    source={product.image}
+                    style={styles.productImage}
+                    contentFit="contain"
+                  />
                 </View>
-                <Pressable style={styles.addButton}><ThemedText style={styles.plus}>+</ThemedText></Pressable>
-              </View>
+
+                {/* INFORMACIÓN DEL PRODUCTO */}
+                <View style={styles.productInfo}>
+                  <ThemedText style={styles.productName}>
+                    {product.name}
+                  </ThemedText>
+
+                  <ThemedText style={styles.productDescription}>
+                    {product.description}
+                  </ThemedText>
+
+                  <ThemedText style={styles.productPrice}>
+                    {product.price}
+                  </ThemedText>
+                </View>
+
+                {/* BOTÓN + */}
+                <Pressable style={styles.addButton}>
+                  <Ionicons name="add" size={32} color="#fffaf5" />
+                </Pressable>
+              </Pressable>
             ))}
           </View>
         </ScrollView>
@@ -50,24 +141,218 @@ export default function ColdDrinksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fbf6ef" },
-  safeArea: { flex: 1, maxWidth: 560, width: "100%", alignSelf: "center" },
-  content: { padding: 20, paddingBottom: 100 },
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  back: { fontSize: 42, lineHeight: 36, color: "#4e2918" },
-  cart: { fontSize: 24 },
-  heading: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 24 },
-  headingIcon: { backgroundColor: "#5b2d16", borderRadius: 40, padding: 14, fontSize: 30 },
-  title: { color: "#29170e", fontSize: 26, fontWeight: "800" },
-  subtitle: { color: "#795e4d", fontSize: 13, marginTop: 4 },
-  list: { gap: 10 },
-  product: { backgroundColor: "#fffdf9", borderRadius: 16, padding: 12, minHeight: 104, flexDirection: "row", alignItems: "center", shadowColor: "#5b2d16", shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  productIcon: { width: 76, height: 76, borderRadius: 38, backgroundColor: "#f2e5d5", alignItems: "center", justifyContent: "center" },
-  emoji: { fontSize: 38 },
-  productInfo: { flex: 1, paddingHorizontal: 12 },
-  name: { color: "#27160d", fontWeight: "800", fontSize: 16 },
-  description: { color: "#795e4d", fontSize: 12, marginTop: 3 },
-  price: { color: "#5b2d16", fontSize: 16, fontWeight: "800", marginTop: 5 },
-  addButton: { backgroundColor: "#5b2d16", borderRadius: 10, width: 38, height: 38, alignItems: "center", justifyContent: "center" },
-  plus: { color: "#fffaf5", fontSize: 27, lineHeight: 30 },
+  /* =========================
+     CONTENEDOR
+     ========================= */
+
+  container: {
+    flex: 1,
+    backgroundColor: "#fbf6ef",
+  },
+
+  safeArea: {
+    flex: 1,
+    maxWidth: 560,
+    width: "100%",
+    alignSelf: "center",
+  },
+
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 0,
+    paddingBottom: 40,
+  },
+
+  /* =========================
+     LOGO
+     ========================= */
+
+  logoContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: 200,
+    marginBottom: 4,
+  },
+
+  logo: {
+    width: 280,
+    height: 180,
+  },
+
+  /* =========================
+     HEADER
+     ========================= */
+
+  header: {
+    height: 70,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+
+  backButton: {
+    width: 50,
+    height: 50,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+
+  title: {
+    flex: 1,
+    color: "#24150e",
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
+  headerSpacer: {
+    width: 50,
+    height: 50,
+  },
+
+  /* =========================
+     BANNER
+     ========================= */
+
+  description: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 130,
+    backgroundColor: "#d07f30",
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+
+  descriptionImage: {
+    width: 105,
+    height: 105,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+
+  descriptionImageInner: {
+    width: 105,
+    height: 105,
+  },
+
+  descriptionText: {
+    flex: 1,
+    justifyContent: "center",
+  },
+
+  descriptionTitle: {
+    color: "#fffaf5",
+    fontSize: 21,
+    fontWeight: "700",
+    marginBottom: 5,
+  },
+
+  descriptionSubtitle: {
+    color: "#fffaf5",
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 19,
+  },
+
+  /* =========================
+     LISTA DE PRODUCTOS
+     ========================= */
+
+  products: {
+    gap: 14,
+  },
+
+  /* =========================
+     TARJETA
+     ========================= */
+
+  product: {
+    minHeight: 115,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    elevation: 3,
+  },
+
+  productPressed: {
+    opacity: 0.75,
+  },
+
+  /* =========================
+     IMAGEN DEL PRODUCTO
+     ========================= */
+
+  productImageContainer: {
+    width: 85,
+    height: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+
+  productImage: {
+    width: 90,
+    height: 90,
+  },
+
+  /* =========================
+     INFORMACIÓN
+     ========================= */
+
+  productInfo: {
+    flex: 1,
+    justifyContent: "center",
+    paddingRight: 4,
+  },
+
+  productName: {
+    color: "#24150e",
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+
+  productDescription: {
+    color: "#795e4d",
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: "500",
+    marginBottom: 6,
+  },
+
+  productPrice: {
+    color: "#57301c",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  /* =========================
+     BOTÓN +
+     ========================= */
+
+  addButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: "#57301c",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
 });

@@ -1,180 +1,392 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { Link } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
-  const theme = useTheme();
+const categories = [
+  {
+    name: "Bebidas Calientes",
+    description: "Café, espresso y bebidas calientes.",
+    image: require("@/assets/images/Bebida-caliente.png"),
+    route: "/bebidas-calientes",
+    color: "#57301c",
+  },
+  {
+    name: "Bebidas Frías",
+    description: "Refrescantes bebidas preparadas al momento.",
+    image: require("@/assets/images/Bebidas-frias.png"),
+    route: "/bebidas-frias",
+    color: "#d07f30",
+  },
+  {
+    name: "Frappes",
+    description: "Café frío, hielo y mucho sabor.",
+    image: require("@/assets/images/Frappes.png"),
+    route: "/frappes",
+    color: "#dfb887",
+  },
+  {
+    name: "Lunch",
+    description: "Deliciosas opciones para tu comida.",
+    image: require("@/assets/images/Lunch.png"),
+    route: "/lunch",
+    color: "#57301c",
+  },
+];
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
-
+export default function ExploreScreen() {
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* LOGO CAFETEC */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("@/assets/images/cafetecTrasnsparentepng.png")}
+              style={styles.logo}
+              contentFit="contain"
+              accessibilityLabel="Logo Cafetec"
+            />
+          </View>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <View>
+              <ThemedText style={styles.title}>Explorar</ThemedText>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
+              <ThemedText style={styles.subtitle}>
+                Descubre todo lo que tenemos para ti
               </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
+            </View>
+          </View>
 
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+          {/* MENSAJE DE BIENVENIDA */}
+          <View style={styles.welcome}>
+            <View style={styles.welcomeIcon}>
+              <Ionicons name="cafe" size={28} color="#fffaf5" />
+            </View>
 
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+            <View style={styles.welcomeText}>
+              <ThemedText style={styles.welcomeTitle}>
+                ¿Qué se te antoja?
+              </ThemedText>
 
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
+              <ThemedText style={styles.welcomeSubtitle}>
+                Elige una categoría y descubre nuestras opciones.
+              </ThemedText>
+            </View>
+          </View>
+
+          {/* CATEGORÍAS */}
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>Categorías</ThemedText>
+
+            <ThemedText style={styles.sectionCount}>
+              {categories.length} opciones
             </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+          </View>
+
+          <View style={styles.categories}>
+            {categories.map((category, index) => (
+              <Link key={index} href={category.route as any} asChild>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.category,
+                    pressed && styles.categoryPressed,
+                  ]}
+                >
+                  {/* IMAGEN */}
+                  <View
+                    style={[
+                      styles.categoryImageContainer,
+                      {
+                        backgroundColor: category.color,
+                      },
+                    ]}
+                  >
+                    <Image
+                      source={category.image}
+                      style={styles.categoryImage}
+                      contentFit="contain"
+                    />
+                  </View>
+
+                  {/* INFORMACIÓN */}
+                  <View style={styles.categoryInfo}>
+                    <ThemedText style={styles.categoryName}>
+                      {category.name}
+                    </ThemedText>
+
+                    <ThemedText style={styles.categoryDescription}>
+                      {category.description}
+                    </ThemedText>
+
+                    <View style={styles.viewCategory}>
+                      <ThemedText style={styles.viewCategoryText}>
+                        Ver productos
+                      </ThemedText>
+
+                      <Ionicons
+                        name="arrow-forward"
+                        size={18}
+                        color="#57301c"
+                      />
+                    </View>
+                  </View>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
+
+          {/* PIE */}
+          <View style={styles.footer}>
+            <Ionicons name="heart" size={18} color="#d07f30" />
+
+            <ThemedText style={styles.footerText}>
+              Hecho con cariño en Cafetec
+            </ThemedText>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  /* =========================
+     CONTENEDOR
+  ========================= */
+
+  container: {
+    flex: 1,
+    backgroundColor: "#fbf6ef",
+  },
+
+  safeArea: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
+  },
+
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 0,
+    paddingBottom: 40,
+  },
+
+  /* =========================
+     LOGO
+  ========================= */
+
+  logoContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: 180,
+    marginBottom: 4,
+  },
+
+  logo: {
+    width: 270,
+    height: 170,
+  },
+
+  /* =========================
+     HEADER
+  ========================= */
+
+  header: {
+    marginBottom: 20,
+  },
+
+  title: {
+    color: "#24150e",
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 5,
+  },
+
+  subtitle: {
+    color: "#795e4d",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+
+  /* =========================
+     BIENVENIDA
+  ========================= */
+
+  welcome: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#57301c",
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 24,
+  },
+
+  welcomeIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: "rgba(255, 250, 245, 0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+
+  welcomeText: {
     flex: 1,
   },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+
+  welcomeTitle: {
+    color: "#fffaf5",
+    fontSize: 19,
+    fontWeight: "700",
+    marginBottom: 4,
   },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
+
+  welcomeSubtitle: {
+    color: "#e8d9cc",
+    fontSize: 13,
+    lineHeight: 18,
   },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+
+  /* =========================
+     SECCIÓN
+  ========================= */
+
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
   },
-  centerText: {
-    textAlign: 'center',
+
+  sectionTitle: {
+    color: "#24150e",
+    fontSize: 21,
+    fontWeight: "700",
   },
-  pressed: {
-    opacity: 0.7,
+
+  sectionCount: {
+    color: "#795e4d",
+    fontSize: 13,
+    fontWeight: "500",
   },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
+
+  /* =========================
+     CATEGORÍAS
+  ========================= */
+
+  categories: {
+    gap: 14,
   },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
+
+  category: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 12,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+
+    elevation: 3,
   },
-  collapsibleContent: {
-    alignItems: 'center',
+
+  categoryPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.985 }],
   },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
+
+  /* =========================
+     IMAGEN CATEGORÍA
+  ========================= */
+
+  categoryImageContainer: {
+    width: 105,
+    height: 105,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    marginRight: 14,
   },
-  imageReact: {
+
+  categoryImage: {
     width: 100,
     height: 100,
-    alignSelf: 'center',
+  },
+
+  /* =========================
+     INFORMACIÓN
+  ========================= */
+
+  categoryInfo: {
+    flex: 1,
+    paddingRight: 4,
+  },
+
+  categoryName: {
+    color: "#24150e",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 5,
+  },
+
+  categoryDescription: {
+    color: "#795e4d",
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+
+  /* =========================
+     VER PRODUCTOS
+  ========================= */
+
+  viewCategory: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  viewCategoryText: {
+    color: "#57301c",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  /* =========================
+     FOOTER
+  ========================= */
+
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 28,
+    gap: 7,
+  },
+
+  footerText: {
+    color: "#795e4d",
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
