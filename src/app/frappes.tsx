@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useMenuProducts } from "@/hooks/use-menu-products";
 
 const products = [
   {
@@ -41,6 +42,7 @@ const products = [
 ];
 
 export default function FrappesScreen() {
+  const { products: apiProducts, error: apiError } = useMenuProducts("frappes");
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -93,7 +95,8 @@ export default function FrappesScreen() {
 
           {/* PRODUCTOS */}
           <View style={styles.products}>
-            {products.map((product, index) => (
+            {apiError && <ThemedText style={styles.productDescription}>{apiError}</ThemedText>}
+            {(apiProducts.length ? apiProducts : products).map((product, index) => (
               <Pressable
                 key={index}
                 style={({ pressed }) => [
@@ -104,7 +107,7 @@ export default function FrappesScreen() {
                 {/* IMAGEN DEL PRODUCTO */}
                 <View style={styles.productImageContainer}>
                   <Image
-                    source={product.image}
+                    source={"imageUrl" in product && product.imageUrl ? { uri: product.imageUrl } : product.image}
                     style={styles.productImage}
                     contentFit="contain"
                   />
@@ -121,7 +124,7 @@ export default function FrappesScreen() {
                   </ThemedText>
 
                   <ThemedText style={styles.productPrice}>
-                    {product.price}
+                    {typeof product.price === "number" ? `$${product.price}` : product.price}
                   </ThemedText>
                 </View>
 
@@ -164,7 +167,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-    height: 200,
+    height: 100,
     marginBottom: 4,
   },
 

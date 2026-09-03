@@ -10,6 +10,43 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
+## API para Postman
+
+La API de desarrollo se inicia con:
+
+```bash
+npm run api
+```
+
+Por defecto escucha en `http://localhost:3000`. En el emulador Android, la app usa automáticamente `http://10.0.2.2:3000` para acceder a este mismo servidor. En Postman puedes probar:
+
+- `GET http://localhost:3000/health`
+- `GET http://localhost:3000/api/products?category=hot-drinks`
+- `GET http://localhost:3000/api/products?category=cold-drinks`
+- `GET http://localhost:3000/api/products?category=frappes`
+- `GET http://localhost:3000/api/products?category=lunch`
+- `GET http://localhost:3000/api/products/:id`
+- `POST http://localhost:3000/api/products`
+- `PUT http://localhost:3000/api/products/:id`
+- `DELETE http://localhost:3000/api/products/:id`
+
+Para `POST` y `PUT`, usa `Body > raw > JSON`:
+
+```json
+{
+  "id": "lunch-nuevo",
+  "category": "lunch",
+  "name": "Producto nuevo",
+  "description": "Descripción del producto.",
+  "price": 80,
+  "imageUrl": "https://tu-dominio.com/imagenes/producto.png"
+}
+```
+
+`imageUrl` es la URL pública de la imagen. La app la carga desde esa dirección y ya no depende de un `require` para los productos enviados por Postman. La API usa memoria durante el desarrollo; los cambios se pierden al reiniciar el proceso. Después de modificar un producto en Postman, vuelve a entrar al menú en el emulador para que se actualice. Para un celular físico, copia `.env.example` como `.env` y cambia la IP por la IP local de tu computadora.
+
+También puedes importar directamente la colección [CafeTec.postman_collection.json](./postman/CafeTec.postman_collection.json) en Postman.
+
 2. Start the app
 
    ```bash

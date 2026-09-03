@@ -1,46 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-
-const products = [
-  {
-    name: "Club Sandwich",
-    description: "Pan tostado, pollo, jamón, queso y vegetales.",
-    price: "$75",
-    image: require("@/assets/images/0001-Club-Sandwich.png"),
-  },
-  {
-    name: "Baguette de Pollo",
-    description: "Baguette con pollo, queso y vegetales frescos.",
-    price: "$72",
-    image: require("@/assets/images/0002-baguette-de-Pollo.png"),
-  },
-  {
-    name: "Croissant",
-    description: "Croissant de mantequilla relleno de jamón y queso.",
-    price: "$55",
-    image: require("@/assets/images/0003-Croissant.png"),
-  },
-  {
-    name: "Wrap Vegetariano",
-    description: "Lechuga, tomate, queso y vegetales frescos.",
-    price: "$60",
-    image: require("@/assets/images/0004-Wrap-Vegetariano.png"),
-  },
-  {
-    name: "Ensalada César",
-    description: "Lechuga fresca, pollo, queso y aderezo César.",
-    price: "$65",
-    image: require("@/assets/images/0005-Ensalada-Cesar.png"),
-  },
-];
+import { useMenuProducts } from "@/hooks/use-menu-products";
 
 export default function LunchScreen() {
+  const { products, error: apiError } = useMenuProducts("lunch");
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -91,11 +66,13 @@ export default function LunchScreen() {
             </View>
           </View>
 
+          {apiError && <ThemedText style={styles.apiError}>{apiError}</ThemedText>}
+
           {/* PRODUCTOS */}
           <View style={styles.products}>
-            {products.map((product, index) => (
+            {products.map((product) => (
               <Pressable
-                key={index}
+                key={product.id}
                 style={({ pressed }) => [
                   styles.product,
                   pressed && styles.productPressed,
@@ -104,7 +81,7 @@ export default function LunchScreen() {
                 {/* IMAGEN DEL PRODUCTO */}
                 <View style={styles.productImageContainer}>
                   <Image
-                    source={product.image}
+                    source={product.imageUrl ? { uri: product.imageUrl } : product.image}
                     style={styles.productImage}
                     contentFit="contain"
                   />
@@ -121,7 +98,7 @@ export default function LunchScreen() {
                   </ThemedText>
 
                   <ThemedText style={styles.productPrice}>
-                    {product.price}
+                    ${product.price}
                   </ThemedText>
                 </View>
 
@@ -164,7 +141,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-    height: 200,
+    height: 100,
     marginBottom: 4,
   },
 
@@ -258,6 +235,12 @@ const styles = StyleSheet.create({
 
   products: {
     gap: 14,
+  },
+
+  apiError: {
+    color: "#a33a2b",
+    fontSize: 13,
+    marginBottom: 12,
   },
 
   product: {

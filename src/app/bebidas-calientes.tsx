@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useMenuProducts } from "@/hooks/use-menu-products";
 
 const products = [
   {
@@ -41,6 +42,7 @@ const products = [
 ];
 
 export default function HotDrinksScreen() {
+  const { products: apiProducts, error: apiError } = useMenuProducts("hot-drinks");
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -109,7 +111,8 @@ export default function HotDrinksScreen() {
           ====================================== */}
 
           <View style={styles.products}>
-            {products.map((product) => (
+            {apiError && <ThemedText style={styles.productDescription}>{apiError}</ThemedText>}
+            {(apiProducts.length ? apiProducts : products).map((product) => (
               <Pressable
                 key={product.name}
                 style={({ pressed }) => [
@@ -121,7 +124,7 @@ export default function HotDrinksScreen() {
 
                 <View style={styles.productImageContainer}>
                   <Image
-                    source={product.image}
+                    source={"imageUrl" in product && product.imageUrl ? { uri: product.imageUrl } : product.image}
                     style={styles.productImage}
                     contentFit="contain"
                   />
@@ -139,7 +142,7 @@ export default function HotDrinksScreen() {
                   </ThemedText>
 
                   <ThemedText style={styles.productPrice}>
-                    {product.price}
+                    {typeof product.price === "number" ? `$${product.price}` : product.price}
                   </ThemedText>
                 </View>
 
@@ -191,7 +194,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-    height: 200,
+    height: 100,
     marginBottom: 4,
   },
 

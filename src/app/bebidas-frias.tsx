@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useMenuProducts } from "@/hooks/use-menu-products";
 
 const products = [
   {
@@ -41,6 +42,7 @@ const products = [
 ];
 
 export default function ColdDrinksScreen() {
+  const { products: apiProducts, error: apiError } = useMenuProducts("cold-drinks");
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -95,7 +97,8 @@ export default function ColdDrinksScreen() {
 
           {/* PRODUCTOS */}
           <View style={styles.products}>
-            {products.map((product, index) => (
+            {apiError && <ThemedText style={styles.productDescription}>{apiError}</ThemedText>}
+            {(apiProducts.length ? apiProducts : products).map((product, index) => (
               <Pressable
                 key={index}
                 style={({ pressed }) => [
@@ -106,7 +109,7 @@ export default function ColdDrinksScreen() {
                 {/* IMAGEN DEL PRODUCTO */}
                 <View style={styles.productImageContainer}>
                   <Image
-                    source={product.image}
+                    source={"imageUrl" in product && product.imageUrl ? { uri: product.imageUrl } : product.image}
                     style={styles.productImage}
                     contentFit="contain"
                   />
@@ -123,7 +126,7 @@ export default function ColdDrinksScreen() {
                   </ThemedText>
 
                   <ThemedText style={styles.productPrice}>
-                    {product.price}
+                    {typeof product.price === "number" ? `$${product.price}` : product.price}
                   </ThemedText>
                 </View>
 
@@ -170,13 +173,13 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-    height: 200,
+    height: 100,
     marginBottom: 4,
   },
 
   logo: {
     width: 280,
-    height: 180,
+    height: 200,
   },
 
   /* =========================
