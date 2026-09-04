@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useCart } from "@/context/cart-context";
 
 const categories = [
   {
@@ -44,6 +45,7 @@ const categories = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { totalItems } = useCart();
 
   return (
     <ThemedView style={styles.container}>
@@ -69,9 +71,27 @@ export default function HomeScreen() {
               TÍTULO
               ========================= */}
 
-          <ThemedText type="title" style={styles.title}>
-            Menú
-          </ThemedText>
+          <View style={styles.titleRow}>
+            <ThemedText type="title" style={styles.title}>
+              Menú
+            </ThemedText>
+
+            <Pressable
+              onPress={() => router.push("/carrito" as never)}
+              style={({ pressed }) => [
+                styles.cartButton,
+                pressed && styles.pressed,
+              ]}
+              accessibilityLabel={`Ver carrito, ${totalItems} productos`}
+            >
+              <Ionicons name="cart-outline" size={27} color="#fffaf5" />
+              {totalItems > 0 && (
+                <View style={styles.cartBadge}>
+                  <ThemedText style={styles.cartBadgeText}>{totalItems}</ThemedText>
+                </View>
+              )}
+            </Pressable>
+          </View>
 
           <ThemedText style={styles.intro}>
             Elige tu categoría y descubre{"\n"}tus favoritos
@@ -200,6 +220,13 @@ const styles = StyleSheet.create({
      TÍTULO
      ========================= */
 
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+
   title: {
     color: "#24150e",
 
@@ -208,7 +235,39 @@ const styles = StyleSheet.create({
 
     fontWeight: "700",
 
-    marginBottom: 4,
+    marginBottom: 0,
+  },
+
+  cartButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "#57301c",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+
+  cartBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 5,
+    backgroundColor: "#d07f30",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fbf6ef",
+  },
+
+  cartBadgeText: {
+    color: "#fffaf5",
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: "700",
   },
 
   intro: {

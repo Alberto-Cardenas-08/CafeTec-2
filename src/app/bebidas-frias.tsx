@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useMenuProducts } from "@/hooks/use-menu-products";
+import { useCart } from "@/context/cart-context";
 
 const products = [
   {
@@ -43,6 +44,11 @@ const products = [
 
 export default function ColdDrinksScreen() {
   const { products: apiProducts, error: apiError } = useMenuProducts("cold-drinks");
+  const { totalItems, addProduct } = useCart();
+  const availableProducts = apiProducts.length ? apiProducts : products.map((product) => ({
+    ...product,
+    id: product.name,
+  }));
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -98,7 +104,7 @@ export default function ColdDrinksScreen() {
           {/* PRODUCTOS */}
           <View style={styles.products}>
             {apiError && <ThemedText style={styles.productDescription}>{apiError}</ThemedText>}
-            {(apiProducts.length ? apiProducts : products).map((product, index) => (
+            {availableProducts.map((product, index) => (
               <Pressable
                 key={index}
                 style={({ pressed }) => [
@@ -131,12 +137,26 @@ export default function ColdDrinksScreen() {
                 </View>
 
                 {/* BOTÓN + */}
-                <Pressable style={styles.addButton}>
+                <Pressable
+                  style={styles.addButton}
+                  onPress={() => {
+                    if (!addProduct(product)) {
+                      Alert.alert("Carrito lleno", "Solo puedes agregar 2 productos por dispositivo.");
+                    }
+                  }}
+                  accessibilityLabel={`Agregar ${product.name} al carrito`}
+                >
                   <Ionicons name="add" size={32} color="#fffaf5" />
                 </Pressable>
               </Pressable>
             ))}
           </View>
+          <Link href={"/carrito" as any} asChild>
+            <Pressable style={styles.cartButton}>
+              <Ionicons name="cart-outline" size={24} color="#fffaf5" />
+              <ThemedText style={styles.cartButtonText}>Ver carrito ({totalItems}/2)</ThemedText>
+            </Pressable>
+          </Link>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -357,5 +377,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
+  },
+  cartButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#d07f30",
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 22,
+  },
+  cartButtonText: {
+    color: "#fffaf5",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

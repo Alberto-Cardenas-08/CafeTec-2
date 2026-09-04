@@ -9,6 +9,7 @@ export default function AppTabs() {
       <Tabs.Screen name="bebidas-frias" options={{ href: null }} />
       <Tabs.Screen name="frappes" options={{ href: null }} />
       <Tabs.Screen name="lunch" options={{ href: null }} />
+      <Tabs.Screen name="carrito" options={{ href: null }} />
     </Tabs>
   );
 }

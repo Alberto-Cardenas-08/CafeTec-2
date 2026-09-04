@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,9 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useMenuProducts } from "@/hooks/use-menu-products";
+import { useCart } from "@/context/cart-context";
 
 export default function LunchScreen() {
   const { products, error: apiError } = useMenuProducts("lunch");
+  const { addProduct } = useCart();
 
   return (
     <ThemedView style={styles.container}>
@@ -103,7 +106,15 @@ export default function LunchScreen() {
                 </View>
 
                 {/* BOTÓN + */}
-                <Pressable style={styles.addButton}>
+                <Pressable
+                  style={styles.addButton}
+                  onPress={() => {
+                    if (!addProduct(product)) {
+                      Alert.alert("Carrito lleno", "Solo puedes agregar 2 productos por dispositivo.");
+                    }
+                  }}
+                  accessibilityLabel={`Agregar ${product.name} al carrito`}
+                >
                   <Ionicons name="add" size={28} color="#fffaf5" />
                 </Pressable>
               </Pressable>

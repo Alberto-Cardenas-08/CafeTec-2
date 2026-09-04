@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useMenuProducts } from "@/hooks/use-menu-products";
+import { useCart } from "@/context/cart-context";
 
 const products = [
   {
@@ -43,6 +44,7 @@ const products = [
 
 export default function FrappesScreen() {
   const { products: apiProducts, error: apiError } = useMenuProducts("frappes");
+  const { addProduct } = useCart();
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -129,7 +131,15 @@ export default function FrappesScreen() {
                 </View>
 
                 {/* BOTÓN + */}
-                <Pressable style={styles.addButton}>
+                <Pressable
+                  style={styles.addButton}
+                  onPress={() => {
+                    if (!addProduct(product)) {
+                      Alert.alert("Carrito lleno", "Solo puedes agregar 2 productos por dispositivo.");
+                    }
+                  }}
+                  accessibilityLabel={`Agregar ${product.name} al carrito`}
+                >
                   <Ionicons name="add" size={28} color="#fffaf5" />
                 </Pressable>
               </Pressable>
