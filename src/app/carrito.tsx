@@ -26,7 +26,7 @@ export default function CartScreen() {
           </View>
 
           <ThemedText style={styles.limit}>
-            {totalItems} de 2 productos
+            {totalItems} de 3 productos
           </ThemedText>
 
           {items.length === 0 ? (

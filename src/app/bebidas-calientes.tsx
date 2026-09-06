@@ -44,7 +44,7 @@ const products = [
 
 export default function HotDrinksScreen() {
   const { products: apiProducts, error: apiError } = useMenuProducts("hot-drinks");
-  const { addProduct } = useCart();
+  const { totalItems, addProduct } = useCart();
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -154,7 +154,7 @@ export default function HotDrinksScreen() {
                   style={styles.addButton}
                   onPress={() => {
                     if (!addProduct(product)) {
-                      Alert.alert("Carrito lleno", "Solo puedes agregar 2 productos por dispositivo.");
+                      Alert.alert("Carrito lleno", "Solo puedes agregar 3 productos por dispositivo.");
                     }
                   }}
                   accessibilityLabel={`Agregar ${product.name} al carrito`}
@@ -164,6 +164,12 @@ export default function HotDrinksScreen() {
               </Pressable>
             ))}
           </View>
+          <Link href={"/carrito" as any} asChild>
+            <Pressable style={styles.cartButton}>
+              <Ionicons name="cart-outline" size={24} color="#fffaf5" />
+              <ThemedText style={styles.cartButtonText}>Ver carrito ({totalItems}/3)</ThemedText>
+            </Pressable>
+          </Link>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -435,5 +441,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
 
     marginLeft: 8,
+  },
+  cartButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#d07f30",
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 22,
+  },
+  cartButtonText: {
+    color: "#fffaf5",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

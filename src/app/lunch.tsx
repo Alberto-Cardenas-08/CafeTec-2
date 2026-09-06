@@ -110,7 +110,7 @@ export default function LunchScreen() {
                   style={styles.addButton}
                   onPress={() => {
                     if (!addProduct(product)) {
-                      Alert.alert("Carrito lleno", "Solo puedes agregar 2 productos por dispositivo.");
+                      Alert.alert("Carrito lleno", "Solo puedes agregar 3 productos por dispositivo.");
                     }
                   }}
                   accessibilityLabel={`Agregar ${product.name} al carrito`}

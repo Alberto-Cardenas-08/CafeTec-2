@@ -141,7 +141,7 @@ export default function ColdDrinksScreen() {
                   style={styles.addButton}
                   onPress={() => {
                     if (!addProduct(product)) {
-                      Alert.alert("Carrito lleno", "Solo puedes agregar 2 productos por dispositivo.");
+                      Alert.alert("Carrito lleno", "Solo puedes agregar 3 productos por dispositivo.");
                     }
                   }}
                   accessibilityLabel={`Agregar ${product.name} al carrito`}
@@ -154,7 +154,7 @@ export default function ColdDrinksScreen() {
           <Link href={"/carrito" as any} asChild>
             <Pressable style={styles.cartButton}>
               <Ionicons name="cart-outline" size={24} color="#fffaf5" />
-              <ThemedText style={styles.cartButtonText}>Ver carrito ({totalItems}/2)</ThemedText>
+              <ThemedText style={styles.cartButtonText}>Ver carrito ({totalItems}/3)</ThemedText>
             </Pressable>
           </Link>
         </ScrollView>

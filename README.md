@@ -1,93 +1,102 @@
-# Welcome to your Expo app 👋
+# CafeTec
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación móvil de cafetería creada con Expo, React Native, TypeScript y Expo Router.
 
-## Get started
+## Funcionalidades
 
-1. Install dependencies
+- Menú de bebidas calientes, bebidas frías, frappes y lunch.
+- Productos cargados desde una API de desarrollo.
+- Carrito persistente con límite de 3 productos.
+- Notificación al agregar productos al carrito.
+- Navegación inferior entre Home y Carrito.
 
-   ```bash
-   npm install
-   ```
+## Requisitos
 
-## API para Postman
+- Node.js
+- npm
+- Expo CLI mediante `npx`
+- Android Studio para ejecutar un emulador Android (opcional)
 
-La API de desarrollo se inicia con:
+## Instalación
+
+```bash
+npm install
+```
+
+## Ejecutar la aplicación
+
+Inicia Expo con:
+
+```bash
+npm start
+```
+
+También puedes usar los comandos específicos:
+
+```bash
+npm run android
+npm run ios
+npm run web
+```
+
+## API de desarrollo
+
+En otra terminal, inicia el servidor:
 
 ```bash
 npm run api
 ```
 
-Por defecto escucha en `http://localhost:3000`. En el emulador Android, la app usa automáticamente `http://10.0.2.2:3000` para acceder a este mismo servidor. En Postman puedes probar:
+La API estará disponible en `http://localhost:3000`.
 
-- `GET http://localhost:3000/health`
-- `GET http://localhost:3000/api/products?category=hot-drinks`
-- `GET http://localhost:3000/api/products?category=cold-drinks`
-- `GET http://localhost:3000/api/products?category=frappes`
-- `GET http://localhost:3000/api/products?category=lunch`
-- `GET http://localhost:3000/api/products/:id`
-- `POST http://localhost:3000/api/products`
-- `PUT http://localhost:3000/api/products/:id`
-- `DELETE http://localhost:3000/api/products/:id`
+Endpoints principales:
 
-Para `POST` y `PUT`, usa `Body > raw > JSON`:
-
-```json
-{
-  "id": "lunch-nuevo",
-  "category": "lunch",
-  "name": "Producto nuevo",
-  "description": "Descripción del producto.",
-  "price": 80,
-  "imageUrl": "https://tu-dominio.com/imagenes/producto.png"
-}
+```text
+GET    /health
+GET    /api/products?category=hot-drinks
+GET    /api/products?category=cold-drinks
+GET    /api/products?category=frappes
+GET    /api/products?category=lunch
+GET    /api/products/:id
+POST   /api/products
+PUT    /api/products/:id
+DELETE /api/products/:id
 ```
 
-`imageUrl` es la URL pública de la imagen. La app la carga desde esa dirección y ya no depende de un `require` para los productos enviados por Postman. La API usa memoria durante el desarrollo; los cambios se pierden al reiniciar el proceso. Después de modificar un producto en Postman, vuelve a entrar al menú en el emulador para que se actualice. Para un celular físico, copia `.env.example` como `.env` y cambia la IP por la IP local de tu computadora.
+La API utiliza memoria durante el desarrollo; los cambios se pierden al reiniciar el servidor.
 
-También puedes importar directamente la colección [CafeTec.postman_collection.json](./postman/CafeTec.postman_collection.json) en Postman.
+## Configuración en un dispositivo físico
 
-2. Start the app
+Copia `.env.example` como `.env` y cambia la dirección por la IP local de tu computadora:
 
-   ```bash
-   npx expo start
-   ```
+```env
+EXPO_PUBLIC_API_URL=http://192.168.1.100:3000
+```
 
-In the output, you'll find options to open the app in a
+El dispositivo y la computadora deben estar conectados a la misma red.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Calidad del código
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Comprobar los tipos de TypeScript:
 
 ```bash
-npm run reset-project
+npx tsc --noEmit
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Ejecutar ESLint:
 
-### Other setup steps
+```bash
+npm run lint
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Estructura principal
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```text
+src/app/          Pantallas y rutas de la aplicación
+src/components/   Componentes reutilizables
+src/context/      Estado global del carrito
+src/hooks/        Hooks personalizados
+src/services/     Comunicación con la API
+server/            API de desarrollo
+assets/            Imágenes y recursos visuales
+```

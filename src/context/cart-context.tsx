@@ -1,9 +1,11 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useEffect } from "react";
 import type { ImageSource } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StyleSheet, Text, View } from "react-native";
 
-export const CART_LIMIT = 2;
+export const CART_LIMIT = 3;
 
 export type CartProduct = {
   name: string;
@@ -33,6 +35,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [storageAvailable, setStorageAvailable] = useState(true);
+  const [notification, setNotification] = useState<string | null>(null);
+  const notificationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
 
   useEffect(() => {
@@ -82,6 +86,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return [...current, { ...product, id, quantity: 1 }];
       });
+      const remaining = CART_LIMIT - (totalItems + 1);
+      setNotification(
+        remaining > 0
+          ? `Agregaste ${product.name}. Te quedan ${remaining} para alcanzar el máximo.`
+          : `Agregaste ${product.name}. Has alcanzado el máximo.`,
+      );
+      if (notificationTimer.current) clearTimeout(notificationTimer.current);
+      notificationTimer.current = setTimeout(() => setNotification(null), 2800);
       return true;
     },
     removeProduct: (id) => {
@@ -94,8 +106,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
     clearCart: () => setItems([]),
   }), [items, totalItems]);
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  useEffect(() => () => {
+    if (notificationTimer.current) clearTimeout(notificationTimer.current);
+  }, []);
+
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      {notification && (
+        <View pointerEvents="none" style={styles.notificationContainer}>
+          <View style={styles.notification}>
+            <Ionicons name="checkmark-circle" size={22} color="#fffaf5" />
+            <Text style={styles.notificationText}>{notification}</Text>
+          </View>
+        </View>
+      )}
+    </CartContext.Provider>
+  );
 }
+
+const styles = StyleSheet.create({
+  notificationContainer: {
+    position: "absolute",
+    left: 18,
+    right: 18,
+    bottom: 92,
+    alignItems: "center",
+  },
+  notification: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    maxWidth: 520,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "#57301c",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+  notificationText: {
+    flexShrink: 1,
+    color: "#fffaf5",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+});
 
 function isCartItem(value: unknown): value is CartItem {
   if (!value || typeof value !== "object") return false;
