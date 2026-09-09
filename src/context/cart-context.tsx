@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
-import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from "react";
-import { useEffect } from "react";
-import type { ImageSource } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { ImageSource } from "expo-image";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
+
+import { getProductImage } from "@/services/products";
 
 export const CART_LIMIT = 3;
 
 export type CartProduct = {
+  id: string;
   name: string;
   description: string;
   price: number | string;
@@ -16,14 +18,25 @@ export type CartProduct = {
 };
 
 export type CartItem = CartProduct & {
-  id: string;
   quantity: number;
+};
+
+type StoredCartItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number | string;
+  quantity: number;
+  imageUrl?: string;
 };
 
 type CartContextValue = {
   items: CartItem[];
   totalItems: number;
+  totalPrice: number;
   addProduct: (product: CartProduct) => boolean;
+  incrementProduct: (id: string) => boolean;
+  decrementProduct: (id: string) => void;
   removeProduct: (id: string) => void;
   clearCart: () => void;
 };
@@ -31,27 +44,49 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null);
 const CART_STORAGE_KEY = "cafetec-cart";
 
+export function parsePrice(value: number | string): number {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const parsed = Number(String(value).replace(/[^0-9.]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function quantityOf(items: CartItem[]) {
+  return items.reduce((total, item) => total + item.quantity, 0);
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [storageAvailable, setStorageAvailable] = useState(true);
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+  const totalItems = quantityOf(items);
+  const totalPrice = items.reduce((total, item) => total + parsePrice(item.price) * item.quantity, 0);
+
+  const showNotification = (message: string) => {
+    setNotification(message);
+    if (notificationTimer.current) clearTimeout(notificationTimer.current);
+    notificationTimer.current = setTimeout(() => setNotification(null), 2800);
+  };
 
   useEffect(() => {
     AsyncStorage.getItem(CART_STORAGE_KEY)
       .then((stored) => {
         if (stored) {
-          const parsed: unknown = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            const validItems = parsed.filter(isCartItem);
-            const limitedItems: CartItem[] = [];
-            for (const item of validItems) {
-              if (limitedItems.reduce((total, current) => total + current.quantity, 0) + item.quantity > CART_LIMIT) break;
-              limitedItems.push(item);
+          try {
+            const parsed: unknown = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              const limitedItems: CartItem[] = [];
+              for (const value of parsed) {
+                const item = hydrateCartItem(value);
+                if (!item) continue;
+                if (quantityOf(limitedItems) + item.quantity > CART_LIMIT) break;
+                limitedItems.push(item);
+              }
+              setItems(limitedItems);
             }
-            setItems(limitedItems);
+          } catch (error: unknown) {
+            console.warn("No se pudo leer el carrito guardado.", error);
           }
         }
         setIsLoaded(true);
@@ -65,7 +100,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoaded || !storageAvailable) return;
-    AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items)).catch((error: unknown) => {
+    const payload: StoredCartItem[] = items.map(({ id, name, description, price, quantity, imageUrl }) => ({
+      id,
+      name,
+      description,
+      price,
+      quantity,
+      imageUrl,
+    }));
+    AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(payload)).catch((error: unknown) => {
       console.warn("No se pudo guardar el carrito; se conservará mientras la app esté abierta.", error);
       setStorageAvailable(false);
     });
@@ -74,37 +117,57 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(() => ({
     items,
     totalItems,
+    totalPrice,
     addProduct: (product) => {
-      if (totalItems >= CART_LIMIT) return false;
-      const id = product.name;
+      let added = false;
+      let remaining = 0;
       setItems((current) => {
-        const existing = current.find((item) => item.id === id);
+        const total = quantityOf(current);
+        if (total >= CART_LIMIT) return current;
+        added = true;
+        remaining = CART_LIMIT - (total + 1);
+        const existing = current.find((item) => item.id === product.id);
         if (existing) {
           return current.map((item) =>
-            item.id === id ? { ...item, quantity: item.quantity + 1 } : item,
+            item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
           );
         }
-        return [...current, { ...product, id, quantity: 1 }];
+        return [...current, { ...product, quantity: 1 }];
       });
-      const remaining = CART_LIMIT - (totalItems + 1);
-      setNotification(
-        remaining > 0
-          ? `Agregaste ${product.name}. Te quedan ${remaining} para alcanzar el máximo.`
-          : `Agregaste ${product.name}. Has alcanzado el máximo.`,
-      );
-      if (notificationTimer.current) clearTimeout(notificationTimer.current);
-      notificationTimer.current = setTimeout(() => setNotification(null), 2800);
-      return true;
+      if (added) {
+        showNotification(
+          remaining > 0
+            ? `Agregaste ${product.name}.`
+            : `Agregaste ${product.name}. Llegaste al máximo del pedido.`,
+        );
+      }
+      return added;
     },
-    removeProduct: (id) => {
+    incrementProduct: (id) => {
+      let added = false;
+      setItems((current) => {
+        if (quantityOf(current) >= CART_LIMIT) return current;
+        const existing = current.find((item) => item.id === id);
+        if (!existing) return current;
+        added = true;
+        return current.map((item) =>
+          item.id === id ? { ...item, quantity: item.quantity + 1 } : item,
+        );
+      });
+      return added;
+    },
+    decrementProduct: (id) => {
       setItems((current) =>
         current
           .map((item) => item.id === id ? { ...item, quantity: item.quantity - 1 } : item)
           .filter((item) => item.quantity > 0),
       );
     },
+    removeProduct: (id) => {
+      setItems((current) => current.filter((item) => item.id !== id));
+    },
     clearCart: () => setItems([]),
-  }), [items, totalItems]);
+  }), [items, totalItems, totalPrice]);
 
   useEffect(() => () => {
     if (notificationTimer.current) clearTimeout(notificationTimer.current);
@@ -156,17 +219,30 @@ const styles = StyleSheet.create({
   },
 });
 
-function isCartItem(value: unknown): value is CartItem {
-  if (!value || typeof value !== "object") return false;
+function hydrateCartItem(value: unknown): CartItem | null {
+  if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;
-  return typeof item.id === "string" &&
-    typeof item.name === "string" &&
-    typeof item.description === "string" &&
-    (typeof item.price === "number" || typeof item.price === "string") &&
-    typeof item.quantity === "number" &&
-    Number.isInteger(item.quantity) &&
-    item.quantity > 0 &&
-    "image" in item;
+  if (
+    typeof item.id !== "string" ||
+    typeof item.name !== "string" ||
+    typeof item.description !== "string" ||
+    !(typeof item.price === "number" || typeof item.price === "string") ||
+    typeof item.quantity !== "number" ||
+    !Number.isInteger(item.quantity) ||
+    item.quantity <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    quantity: item.quantity,
+    imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : undefined,
+    image: typeof item.imageUrl === "string" ? { uri: item.imageUrl } : getProductImage(item.id),
+  };
 }
 
 export function useCart() {

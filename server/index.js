@@ -1,58 +1,31 @@
+const fs = require("node:fs");
 const http = require("node:http");
+const path = require("node:path");
 
 const port = Number(process.env.PORT) || 3000;
-const products = [
-  {
-    id: "lunch-club-sandwich",
-    category: "lunch",
-    name: "Club Sandwich",
-    description: "Pan tostado, pollo, jamón, queso y vegetales.",
-    price: 75,
-  },
-  {
-    id: "lunch-baguette-pollo",
-    category: "lunch",
-    name: "Baguette de Pollo",
-    description: "Baguette con pollo, queso y vegetales frescos.",
-    price: 72,
-  },
-  {
-    id: "lunch-croissant",
-    category: "lunch",
-    name: "Croissant",
-    description: "Croissant de mantequilla relleno de jamón y queso.",
-    price: 55,
-  },
-  {
-    id: "lunch-wrap-vegetariano",
-    category: "lunch",
-    name: "Wrap Vegetariano",
-    description: "Lechuga, tomate, queso y vegetales frescos.",
-    price: 60,
-  },
-  {
-    id: "lunch-ensalada-cesar",
-    category: "lunch",
-    name: "Ensalada César",
-    description: "Lechuga fresca, pollo, queso y aderezo César.",
-    price: 65,
-  },
-  { id: "hot-espresso", category: "hot-drinks", name: "Café Espresso", description: "Café Espresso 100% Arábica, intenso y aromático", price: 28 },
-  { id: "hot-americano", category: "hot-drinks", name: "Americano", description: "Café Espresso con agua caliente", price: 32 },
-  { id: "hot-capuchino", category: "hot-drinks", name: "Capuchino", description: "Espresso con leche Espumada", price: 38 },
-  { id: "hot-latte", category: "hot-drinks", name: "Latte", description: "Espresso con leche suave y cremosa", price: 40 },
-  { id: "hot-chocolate", category: "hot-drinks", name: "Chocolate Caliente", description: "Chocolate velga con leche", price: 36 },
-  { id: "cold-iced-coffee", category: "cold-drinks", name: "Iced Coffee", description: "Café frío con hielo.", price: 42 },
-  { id: "cold-iced-latte", category: "cold-drinks", name: "Iced Latte", description: "Latte frío con hielo.", price: 45 },
-  { id: "cold-iced-tea", category: "cold-drinks", name: "Té Helado", description: "Té refrescante con hielo.", price: 35 },
-  { id: "cold-red-berry-lemonade", category: "cold-drinks", name: "Limonada Frutos Rojos", description: "Limonada con mezcla de frutos rojos.", price: 38 },
-  { id: "cold-natural-lemonade", category: "cold-drinks", name: "Limonada Natural", description: "Limonada clásica y refrescante.", price: 32 },
-  { id: "frappe-caramel", category: "frappes", name: "Frappe Caramelo", description: "Café, leche, hielo y caramelo.", price: 55 },
-  { id: "frappe-mocha", category: "frappes", name: "Frappe Mocha", description: "Chocolate, café y crema.", price: 58 },
-  { id: "frappe-vanilla", category: "frappes", name: "Frappe Vainilla", description: "Café con vainilla y crema.", price: 55 },
-  { id: "frappe-cookies", category: "frappes", name: "Frappe Cookies & Cream", description: "Café con galleta y crema.", price: 58 },
-  { id: "frappe-chocolate", category: "frappes", name: "Frappe Chocolate", description: "Chocolate, leche y hielo.", price: 55 },
-];
+const catalog = require(path.join(__dirname, "../src/data/products.json"));
+const products = catalog.map((product) => ({ ...product }));
+const ordersPath = path.join(__dirname, "orders.json");
+
+function loadOrders() {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(ordersPath, "utf8"));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOrders(list) {
+  fs.writeFileSync(ordersPath, JSON.stringify(list, null, 2));
+}
+
+const orders = loadOrders();
+
+function publicProduct(product) {
+  const { imageFile, ...rest } = product;
+  return rest;
+}
 
 function sendJson(response, statusCode, body) {
   response.writeHead(statusCode, {
@@ -61,7 +34,7 @@ function sendJson(response, statusCode, body) {
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   });
-  response.end(JSON.stringify(body));
+  response.end(body == null ? "" : JSON.stringify(body));
 }
 
 function readJson(request) {
@@ -104,6 +77,61 @@ function validateProduct(body) {
   return null;
 }
 
+function createOrderFromBody(body) {
+  const customerName = typeof body?.customerName === "string" ? body.customerName.trim() : "";
+  const note = typeof body?.note === "string" ? body.note.trim() : "";
+  if (!customerName || customerName.length > 80) {
+    throw new Error("Indica un nombre de hasta 80 caracteres.");
+  }
+  if (note.length > 300) {
+    throw new Error("La nota no puede pasar de 300 caracteres.");
+  }
+  if (!Array.isArray(body.items) || body.items.length === 0) {
+    throw new Error("El pedido necesita al menos un producto.");
+  }
+  if (body.items.length > 3) {
+    throw new Error("El pedido no puede tener más de 3 líneas.");
+  }
+
+  const items = body.items.map((item) => {
+    const productId = typeof item?.productId === "string" ? item.productId : "";
+    const quantity = Number(item?.quantity);
+    if (!productId || !Number.isInteger(quantity) || quantity < 1) {
+      throw new Error("Cada producto necesita productId y quantity entera mayor a 0.");
+    }
+    const product = products.find((entry) => entry.id === productId);
+    if (!product) {
+      throw new Error(`No existe el producto ${productId}.`);
+    }
+    return {
+      productId: product.id,
+      name: product.name,
+      quantity,
+      unitPrice: product.price,
+      lineTotal: product.price * quantity,
+    };
+  });
+
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  if (totalQuantity > 3) {
+    throw new Error("Máximo 3 productos por pedido.");
+  }
+
+  const numbers = orders
+    .map((order) => Number(String(order.id).replace(/\D/g, "")))
+    .filter((value) => Number.isFinite(value));
+  const next = (numbers.length ? Math.max(...numbers) : 0) + 1;
+  return {
+    id: `ord-${String(next).padStart(4, "0")}`,
+    createdAt: new Date().toISOString(),
+    customerName,
+    note,
+    status: "recibido",
+    items,
+    total: items.reduce((sum, item) => sum + item.lineTotal, 0),
+  };
+}
+
 const server = http.createServer(async (request, response) => {
   if (request.method === "OPTIONS") {
     sendJson(response, 204, null);
@@ -112,6 +140,7 @@ const server = http.createServer(async (request, response) => {
 
   const url = new URL(request.url, `http://${request.headers.host}`);
   const productMatch = url.pathname.match(/^\/api\/products\/([^/]+)$/);
+  const orderMatch = url.pathname.match(/^\/api\/orders\/([^/]+)$/);
 
   if (request.method === "GET" && url.pathname === "/health") {
     sendJson(response, 200, { status: "ok" });
@@ -123,13 +152,13 @@ const server = http.createServer(async (request, response) => {
     const result = category
       ? products.filter((product) => product.category === category)
       : products;
-    sendJson(response, 200, result);
+    sendJson(response, 200, result.map(publicProduct));
     return;
   }
 
   if (request.method === "GET" && productMatch) {
     const product = products.find((item) => item.id === productMatch[1]);
-    sendJson(response, product ? 200 : 404, product || { error: "Producto no encontrado." });
+    sendJson(response, product ? 200 : 404, product ? publicProduct(product) : { error: "Producto no encontrado." });
     return;
   }
 
@@ -146,7 +175,7 @@ const server = http.createServer(async (request, response) => {
         return;
       }
       products.push(body);
-      sendJson(response, 201, body);
+      sendJson(response, 201, publicProduct(body));
     } catch (error) {
       sendJson(response, 400, { error: error.message });
     }
@@ -167,7 +196,7 @@ const server = http.createServer(async (request, response) => {
         return;
       }
       products[index] = { ...body, id: productMatch[1] };
-      sendJson(response, 200, products[index]);
+      sendJson(response, 200, publicProduct(products[index]));
     } catch (error) {
       sendJson(response, 400, { error: error.message });
     }
@@ -182,6 +211,36 @@ const server = http.createServer(async (request, response) => {
     }
     products.splice(index, 1);
     sendJson(response, 204, null);
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/orders") {
+    const idsParam = url.searchParams.get("ids");
+    if (idsParam) {
+      const wanted = new Set(idsParam.split(",").map((id) => id.trim()).filter(Boolean));
+      sendJson(response, 200, orders.filter((order) => wanted.has(order.id)));
+      return;
+    }
+    sendJson(response, 200, orders);
+    return;
+  }
+
+  if (request.method === "GET" && orderMatch) {
+    const order = orders.find((item) => item.id === decodeURIComponent(orderMatch[1]));
+    sendJson(response, order ? 200 : 404, order || { error: "Pedido no encontrado." });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/orders") {
+    try {
+      const body = await readJson(request);
+      const order = createOrderFromBody(body);
+      orders.unshift(order);
+      saveOrders(orders);
+      sendJson(response, 201, order);
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+    }
     return;
   }
 

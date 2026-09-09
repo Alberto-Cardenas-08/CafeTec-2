@@ -5,10 +5,12 @@ Aplicación móvil de cafetería creada con Expo, React Native, TypeScript y Exp
 ## Funcionalidades
 
 - Menú de bebidas calientes, bebidas frías, frappes y lunch.
-- Productos cargados desde una API de desarrollo.
-- Carrito persistente con límite de 3 productos.
+- Productos cargados desde una API de desarrollo, con menú local de respaldo.
+- Carrito persistente con cantidades, total y límite de 3 productos.
+- Pedido a caja: nombre, nota opcional y envío a la API.
+- Zona de **Mis pedidos** para consultar el estado (recibido, en preparación, listo, entregado).
 - Notificación al agregar productos al carrito.
-- Navegación inferior entre Home y Carrito.
+- Navegación inferior entre Home, Carrito y Pedidos.
 
 ## Requisitos
 
@@ -61,6 +63,10 @@ GET    /api/products/:id
 POST   /api/products
 PUT    /api/products/:id
 DELETE /api/products/:id
+GET    /api/orders
+GET    /api/orders?ids=ord-0001,ord-0002
+GET    /api/orders/:id
+POST   /api/orders
 ```
 
 La API utiliza memoria durante el desarrollo; los cambios se pierden al reiniciar el servidor.
@@ -95,8 +101,9 @@ npm run lint
 src/app/          Pantallas y rutas de la aplicación
 src/components/   Componentes reutilizables
 src/context/      Estado global del carrito
+src/data/         Catálogo compartido con la API
 src/hooks/        Hooks personalizados
 src/services/     Comunicación con la API
-server/            API de desarrollo
-assets/            Imágenes y recursos visuales
+server/           API de desarrollo
+assets/           Imágenes y recursos visuales
 ```

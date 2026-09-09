@@ -31,6 +31,9 @@ export default function AppTabs() {
           <TabTrigger name="carrito" href="/carrito" asChild>
             <TabButton iconName="cart">Carrito</TabButton>
           </TabTrigger>
+          <TabTrigger name="pedidos" href="/pedidos" asChild>
+            <TabButton iconName="receipt">Pedidos</TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>
@@ -72,7 +75,7 @@ export function CustomTabList(props: TabListProps) {
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
+          CafeTec
         </ThemedText>
 
         {props.children}

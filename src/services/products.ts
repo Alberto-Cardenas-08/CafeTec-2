@@ -1,5 +1,7 @@
 import type { ImageSource } from "expo-image";
-import { Platform } from "react-native";
+
+import catalog from "@/data/products.json";
+import { getApiUrl } from "@/services/api";
 
 export type ProductCategory = "hot-drinks" | "cold-drinks" | "frappes" | "lunch";
 
@@ -13,38 +15,26 @@ export type Product = {
   imageUrl?: string;
 };
 
+type CatalogProduct = {
+  id: string;
+  category: ProductCategory;
+  name: string;
+  description: string;
+  price: number;
+  imageFile: string;
+};
+
 type ApiProduct = Omit<Product, "image"> & { imageUrl?: string };
 
-const productRows: [string, ProductCategory, string, string, number, string][] = [
-  ["hot-espresso", "hot-drinks", "Café Espresso", "Café Espresso 100% Arábica, intenso y aromático", 28, "01_espresso.png"],
-  ["hot-americano", "hot-drinks", "Americano", "Café Espresso con agua caliente", 32, "02_americano_corazon.png"],
-  ["hot-capuchino", "hot-drinks", "Capuchino", "Espresso con leche Espumada", 38, "03_capuchino.png"],
-  ["hot-latte", "hot-drinks", "Latte", "Espresso con leche suave y cremosa", 40, "04_latte.png"],
-  ["hot-chocolate", "hot-drinks", "Chocolate Caliente", "Chocolate velga con leche", 36, "05_chocolate_caliente.png"],
-  ["cold-iced-coffee", "cold-drinks", "Iced Coffee", "Café frío con hielo.", 42, "1-iced-coffe.png"],
-  ["cold-iced-latte", "cold-drinks", "Iced Latte", "Latte frío con hielo.", 45, "2-iced-latte.png"],
-  ["cold-iced-tea", "cold-drinks", "Té Helado", "Té refrescante con hielo.", 35, "3-te-helado.png"],
-  ["cold-red-berry-lemonade", "cold-drinks", "Limonada Frutos Rojos", "Limonada con mezcla de frutos rojos.", 38, "4-limonada-frutos-rojos.png"],
-  ["cold-natural-lemonade", "cold-drinks", "Limonada Natural", "Limonada clásica y refrescante.", 32, "5-limonada-natural.png"],
-  ["frappe-caramel", "frappes", "Frappe Caramelo", "Café, leche, hielo y caramelo.", 55, "001-Frappe-Caramelo.png"],
-  ["frappe-mocha", "frappes", "Frappe Mocha", "Chocolate, café y crema.", 58, "002-Frappe-Mocha.png"],
-  ["frappe-vanilla", "frappes", "Frappe Vainilla", "Café con vainilla y crema.", 55, "003-Frappe-Vainilla.png"],
-  ["frappe-cookies", "frappes", "Frappe Cookies & Cream", "Café con galleta y crema.", 58, "004-Frappe-Cookies-And-Cream.png"],
-  ["frappe-chocolate", "frappes", "Frappe Chocolate", "Chocolate, leche y hielo.", 55, "005-Frappe-Chocolate.png"],
-  ["lunch-club-sandwich", "lunch", "Club Sandwich", "Pan tostado, pollo, jamón, queso y vegetales.", 75, "0001-Club-Sandwich.png"],
-  ["lunch-baguette-pollo", "lunch", "Baguette de Pollo", "Baguette con pollo, queso y vegetales frescos.", 72, "0002-baguette-de-Pollo.png"],
-  ["lunch-croissant", "lunch", "Croissant", "Croissant de mantequilla relleno de jamón y queso.", 55, "0003-Croissant.png"],
-  ["lunch-wrap-vegetariano", "lunch", "Wrap Vegetariano", "Lechuga, tomate, queso y vegetales frescos.", 60, "0004-Wrap-Vegetariano.png"],
-  ["lunch-ensalada-cesar", "lunch", "Ensalada César", "Lechuga fresca, pollo, queso y aderezo César.", 65, "0005-Ensalada-Cesar.png"],
-];
+const catalogProducts = catalog as CatalogProduct[];
 
-export const localProducts: Product[] = productRows.map(([id, category, name, description, price, image]) => ({
-  id,
-  category,
-  name,
-  description,
-  price,
-  image: getImage(image),
+export const localProducts: Product[] = catalogProducts.map((product) => ({
+  id: product.id,
+  category: product.category,
+  name: product.name,
+  description: product.description,
+  price: product.price,
+  image: getImage(product.imageFile),
 }));
 
 function getImage(image: string): ImageSource {
@@ -73,16 +63,8 @@ function getImage(image: string): ImageSource {
   }
 }
 
-const apiUrl = (
-  process.env.EXPO_PUBLIC_API_URL ||
-  (Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000")
-).replace(/\/$/, "");
-
 export async function getProducts(category: ProductCategory): Promise<Product[]> {
-  if (!apiUrl) {
-    return localProducts.filter((product) => product.category === category);
-  }
-
+  const apiUrl = getApiUrl();
   const response = await fetch(`${apiUrl}/api/products?category=${category}`);
   if (!response.ok) {
     throw new Error(`La API respondió con el estado ${response.status}.`);
@@ -98,14 +80,19 @@ export async function getProducts(category: ProductCategory): Promise<Product[]>
     }
     return {
       ...item,
+      category: item.category as ProductCategory,
       image: item.imageUrl ? { uri: item.imageUrl } : getFallbackImage(item.id),
     };
   });
 }
 
-function getFallbackImage(productId: string): ImageSource {
+export function getProductImage(productId: string): ImageSource {
   return localProducts.find((product) => product.id === productId)?.image ??
     localProducts[0].image;
+}
+
+function getFallbackImage(productId: string): ImageSource {
+  return getProductImage(productId);
 }
 
 function isApiProduct(value: unknown): value is ApiProduct {

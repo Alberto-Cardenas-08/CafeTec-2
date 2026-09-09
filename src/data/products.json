@@ -1,0 +1,162 @@
+[
+  {
+    "id": "hot-espresso",
+    "category": "hot-drinks",
+    "name": "Café Espresso",
+    "description": "Café Espresso 100% Arábica, intenso y aromático",
+    "price": 28,
+    "imageFile": "01_espresso.png"
+  },
+  {
+    "id": "hot-americano",
+    "category": "hot-drinks",
+    "name": "Americano",
+    "description": "Café Espresso con agua caliente",
+    "price": 32,
+    "imageFile": "02_americano_corazon.png"
+  },
+  {
+    "id": "hot-capuchino",
+    "category": "hot-drinks",
+    "name": "Capuchino",
+    "description": "Espresso con leche espumada",
+    "price": 38,
+    "imageFile": "03_capuchino.png"
+  },
+  {
+    "id": "hot-latte",
+    "category": "hot-drinks",
+    "name": "Latte",
+    "description": "Espresso con leche suave y cremosa",
+    "price": 40,
+    "imageFile": "04_latte.png"
+  },
+  {
+    "id": "hot-chocolate",
+    "category": "hot-drinks",
+    "name": "Chocolate Caliente",
+    "description": "Chocolate belga con leche",
+    "price": 36,
+    "imageFile": "05_chocolate_caliente.png"
+  },
+  {
+    "id": "cold-iced-coffee",
+    "category": "cold-drinks",
+    "name": "Iced Coffee",
+    "description": "Café frío con hielo.",
+    "price": 42,
+    "imageFile": "1-iced-coffe.png"
+  },
+  {
+    "id": "cold-iced-latte",
+    "category": "cold-drinks",
+    "name": "Iced Latte",
+    "description": "Latte frío con hielo.",
+    "price": 45,
+    "imageFile": "2-iced-latte.png"
+  },
+  {
+    "id": "cold-iced-tea",
+    "category": "cold-drinks",
+    "name": "Té Helado",
+    "description": "Té refrescante con hielo.",
+    "price": 35,
+    "imageFile": "3-te-helado.png"
+  },
+  {
+    "id": "cold-red-berry-lemonade",
+    "category": "cold-drinks",
+    "name": "Limonada Frutos Rojos",
+    "description": "Limonada con mezcla de frutos rojos.",
+    "price": 38,
+    "imageFile": "4-limonada-frutos-rojos.png"
+  },
+  {
+    "id": "cold-natural-lemonade",
+    "category": "cold-drinks",
+    "name": "Limonada Natural",
+    "description": "Limonada clásica y refrescante.",
+    "price": 32,
+    "imageFile": "5-limonada-natural.png"
+  },
+  {
+    "id": "frappe-caramel",
+    "category": "frappes",
+    "name": "Frappe Caramelo",
+    "description": "Café, leche, hielo y caramelo.",
+    "price": 55,
+    "imageFile": "001-Frappe-Caramelo.png"
+  },
+  {
+    "id": "frappe-mocha",
+    "category": "frappes",
+    "name": "Frappe Mocha",
+    "description": "Chocolate, café y crema.",
+    "price": 58,
+    "imageFile": "002-Frappe-Mocha.png"
+  },
+  {
+    "id": "frappe-vanilla",
+    "category": "frappes",
+    "name": "Frappe Vainilla",
+    "description": "Café con vainilla y crema.",
+    "price": 55,
+    "imageFile": "003-Frappe-Vainilla.png"
+  },
+  {
+    "id": "frappe-cookies",
+    "category": "frappes",
+    "name": "Frappe Cookies & Cream",
+    "description": "Café con galleta y crema.",
+    "price": 58,
+    "imageFile": "004-Frappe-Cookies-And-Cream.png"
+  },
+  {
+    "id": "frappe-chocolate",
+    "category": "frappes",
+    "name": "Frappe Chocolate",
+    "description": "Chocolate, leche y hielo.",
+    "price": 55,
+    "imageFile": "005-Frappe-Chocolate.png"
+  },
+  {
+    "id": "lunch-club-sandwich",
+    "category": "lunch",
+    "name": "Club Sandwich",
+    "description": "Pan tostado, pollo, jamón, queso y vegetales.",
+    "price": 75,
+    "imageFile": "0001-Club-Sandwich.png"
+  },
+  {
+    "id": "lunch-baguette-pollo",
+    "category": "lunch",
+    "name": "Baguette de Pollo",
+    "description": "Baguette con pollo, queso y vegetales frescos.",
+    "price": 72,
+    "imageFile": "0002-baguette-de-Pollo.png"
+  },
+  {
+    "id": "lunch-croissant",
+    "category": "lunch",
+    "name": "Croissant",
+    "description": "Croissant de mantequilla relleno de jamón y queso.",
+    "price": 55,
+    "imageFile": "0003-Croissant.png"
+  },
+  {
+    "id": "lunch-wrap-vegetariano",
+    "category": "lunch",
+    "name": "Wrap Vegetariano",
+    "description": "Lechuga, tomate, queso y vegetales frescos.",
+    "price": 60,
+    "imageFile": "0004-Wrap-Vegetariano.png"
+  },
+  {
+    "id": "lunch-ensalada-cesar",
+    "category": "lunch",
+    "name": "Ensalada César",
+    "description": "Lechuga fresca, pollo, queso y aderezo César.",
+    "price": 65,
+    "imageFile": "0005-Ensalada-Cesar.png"
+  }
+]

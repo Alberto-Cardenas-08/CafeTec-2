@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#fbf6ef",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -33,7 +33,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#57301c",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -47,8 +47,15 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f55e7d1e-fc0f-49fe-9cad-54298d9cea3e"
+        "projectId": "cd774b77-116b-40df-b371-36d945fc43bf"
       }
+    },
+    "owner": "albertocds-team-2",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/cd774b77-116b-40df-b371-36d945fc43bf"
     }
   }
 }

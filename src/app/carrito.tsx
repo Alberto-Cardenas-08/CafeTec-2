@@ -1,62 +1,209 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Link, useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { useCart } from "@/context/cart-context";
+import { CART_LIMIT, parsePrice, useCart } from "@/context/cart-context";
+import { useOrders } from "@/context/orders-context";
+import { createOrder } from "@/services/orders";
 
 export default function CartScreen() {
-  const { items, totalItems, removeProduct, clearCart } = useCart();
+  const router = useRouter();
+  const {
+    items,
+    totalItems,
+    totalPrice,
+    incrementProduct,
+    decrementProduct,
+    removeProduct,
+    clearCart,
+  } = useCart();
+  const { lastCustomerName, rememberOrder } = useOrders();
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const customerName = nameDraft ?? lastCustomerName;
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const placeOrder = async () => {
+    const name = customerName.trim();
+    if (!name) {
+      Alert.alert("Falta tu nombre", "Escríbelo para identificar el pedido en caja.");
+      return;
+    }
+    if (items.length === 0) {
+      Alert.alert("Carrito vacío", "Agrega productos antes de pedir.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const order = await createOrder({
+        customerName: name,
+        note: note.trim(),
+        items: items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+      });
+      rememberOrder(order);
+      clearCart();
+      setNote("");
+      Alert.alert(
+        "Pedido enviado",
+        `Gracias, ${name}. Tu pedido ${order.id} es de $${order.total}.`,
+        [
+          { text: "Seguir en el menú" },
+          {
+            text: "Ver estado",
+            onPress: () => router.push({ pathname: "/pedido", params: { id: order.id } } as never),
+          },
+        ],
+      );
+    } catch (error: unknown) {
+      Alert.alert(
+        "No se pudo enviar",
+        error instanceof Error
+          ? `${error.message}\n\nAsegúrate de tener la API encendida (npm run api).`
+          : "Revisa la conexión con la API e inténtalo de nuevo.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.header}>
-            <Link href="/" asChild>
-              <Pressable style={styles.backButton}>
-                <Ionicons name="arrow-back" size={32} color="#57301c" />
-              </Pressable>
-            </Link>
-            <ThemedText style={styles.title}>Mi carrito</ThemedText>
-            <View style={styles.headerSpace} />
-          </View>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            <View style={styles.header}>
+              <Link href="/" asChild>
+                <Pressable style={styles.backButton} accessibilityLabel="Volver al menú">
+                  <Ionicons name="arrow-back" size={32} color="#57301c" />
+                </Pressable>
+              </Link>
+              <ThemedText style={styles.title}>Mi carrito</ThemedText>
+              <View style={styles.headerSpace} />
+            </View>
 
-          <ThemedText style={styles.limit}>
-            {totalItems} de 3 productos
-          </ThemedText>
+            <ThemedText style={styles.limit}>
+              {totalItems} {totalItems === 1 ? "producto" : "productos"}
+              {totalItems > 0 ? ` · máximo ${CART_LIMIT}` : ""}
+            </ThemedText>
 
-          {items.length === 0 ? (
-            <ThemedText style={styles.empty}>Tu carrito está vacío.</ThemedText>
-          ) : (
-            <>
-              {items.map((item) => (
-                <View key={item.id} style={styles.item}>
-                  <Image
-                    source={item.imageUrl ? { uri: item.imageUrl } : item.image}
-                    style={styles.image}
-                    contentFit="contain"
-                  />
-                  <View style={styles.itemInfo}>
-                    <ThemedText style={styles.name}>{item.name}</ThemedText>
-                    <ThemedText style={styles.price}>
-                      {typeof item.price === "number" ? `$${item.price}` : item.price} x {item.quantity}
-                    </ThemedText>
+            {items.length === 0 ? (
+              <ThemedText style={styles.empty}>Tu carrito está vacío.</ThemedText>
+            ) : (
+              <>
+                {items.map((item) => (
+                  <View key={item.id} style={styles.item}>
+                    <Image
+                      source={item.imageUrl ? { uri: item.imageUrl } : item.image}
+                      style={styles.image}
+                      contentFit="contain"
+                    />
+                    <View style={styles.itemInfo}>
+                      <ThemedText style={styles.name}>{item.name}</ThemedText>
+                      <ThemedText style={styles.price}>
+                        ${parsePrice(item.price)} c/u · ${parsePrice(item.price) * item.quantity}
+                      </ThemedText>
+                      <View style={styles.qtyRow}>
+                        <Pressable
+                          onPress={() => decrementProduct(item.id)}
+                          style={styles.qtyButton}
+                          accessibilityLabel={`Quitar uno de ${item.name}`}
+                        >
+                          <Ionicons name="remove" size={18} color="#57301c" />
+                        </Pressable>
+                        <ThemedText style={styles.qtyText}>{item.quantity}</ThemedText>
+                        <Pressable
+                          onPress={() => {
+                            if (!incrementProduct(item.id)) {
+                              Alert.alert(
+                                "Pedido lleno",
+                                `Solo puedes agregar ${CART_LIMIT} productos por pedido.`,
+                              );
+                            }
+                          }}
+                          style={styles.qtyButton}
+                          accessibilityLabel={`Agregar uno de ${item.name}`}
+                        >
+                          <Ionicons name="add" size={18} color="#57301c" />
+                        </Pressable>
+                      </View>
+                    </View>
+                    <Pressable
+                      onPress={() => removeProduct(item.id)}
+                      style={styles.remove}
+                      accessibilityLabel={`Quitar ${item.name} del carrito`}
+                    >
+                      <Ionicons name="trash-outline" size={24} color="#57301c" />
+                    </Pressable>
                   </View>
-                  <Pressable onPress={() => removeProduct(item.id)} style={styles.remove}>
-                    <Ionicons name="trash-outline" size={24} color="#57301c" />
-                  </Pressable>
+                ))}
+
+                <View style={styles.totalBox}>
+                  <ThemedText style={styles.totalLabel}>Total</ThemedText>
+                  <ThemedText style={styles.totalValue}>${totalPrice}</ThemedText>
                 </View>
-              ))}
-              <Pressable onPress={clearCart} style={styles.clearButton}>
-                <ThemedText style={styles.clearText}>Vaciar carrito</ThemedText>
-              </Pressable>
-            </>
-          )}
-        </ScrollView>
+
+                <ThemedText style={styles.fieldLabel}>Tu nombre</ThemedText>
+                <TextInput
+                  value={customerName}
+                  onChangeText={setNameDraft}
+                  placeholder="Ej. Alberto"
+                  placeholderTextColor="#a08a7a"
+                  style={styles.input}
+                  maxLength={80}
+                />
+
+                <ThemedText style={styles.fieldLabel}>Nota para caja (opcional)</ThemedText>
+                <TextInput
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Ej. Mesa 4, sin azúcar, para recoger"
+                  placeholderTextColor="#a08a7a"
+                  style={[styles.input, styles.noteInput]}
+                  maxLength={300}
+                  multiline
+                />
+
+                <Pressable
+                  onPress={placeOrder}
+                  disabled={submitting}
+                  style={[styles.orderButton, submitting && styles.disabled]}
+                >
+                  {submitting ? (
+                    <ActivityIndicator color="#fffaf5" />
+                  ) : (
+                    <ThemedText style={styles.orderText}>Hacer pedido</ThemedText>
+                  )}
+                </Pressable>
+
+                <Pressable onPress={clearCart} style={styles.clearButton}>
+                  <ThemedText style={styles.clearText}>Vaciar carrito</ThemedText>
+                </Pressable>
+              </>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -65,6 +212,7 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fbf6ef" },
   safeArea: { flex: 1, maxWidth: 560, width: "100%", alignSelf: "center" },
+  flex: { flex: 1 },
   content: { padding: 18, paddingBottom: 40 },
   header: { height: 70, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   backButton: { width: 50, height: 50, justifyContent: "center" },
@@ -76,8 +224,54 @@ const styles = StyleSheet.create({
   image: { width: 70, height: 70 },
   itemInfo: { flex: 1, marginLeft: 10 },
   name: { color: "#24150e", fontSize: 17, fontWeight: "700" },
-  price: { color: "#57301c", fontSize: 16, marginTop: 6 },
+  price: { color: "#57301c", fontSize: 15, marginTop: 4 },
+  qtyRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8 },
+  qtyButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#57301c",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  qtyText: { color: "#24150e", fontSize: 16, fontWeight: "700", minWidth: 18, textAlign: "center" },
   remove: { padding: 10 },
-  clearButton: { backgroundColor: "#57301c", borderRadius: 12, padding: 15, alignItems: "center", marginTop: 8 },
+  totalBox: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 4,
+    marginBottom: 18,
+  },
+  totalLabel: { color: "#24150e", fontSize: 18, fontWeight: "700" },
+  totalValue: { color: "#57301c", fontSize: 22, fontWeight: "700" },
+  fieldLabel: { color: "#24150e", fontSize: 14, fontWeight: "700", marginBottom: 6 },
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: "#24150e",
+    fontSize: 16,
+    marginBottom: 14,
+  },
+  noteInput: {
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  orderButton: {
+    backgroundColor: "#d07f30",
+    borderRadius: 12,
+    padding: 15,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  orderText: { color: "#fffaf5", fontWeight: "700", fontSize: 16 },
+  disabled: { opacity: 0.7 },
+  clearButton: { backgroundColor: "#57301c", borderRadius: 12, padding: 15, alignItems: "center", marginTop: 10 },
   clearText: { color: "#fffaf5", fontWeight: "700", fontSize: 16 },
 });
