@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>CafeTec · Administración</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+
+  <div class="app-shell">
+
+    <!-- =========================
+         BARRA LATERAL
+    ========================== -->
+    <aside class="sidebar">
+
+      <div class="brand">
+
+        <div class="brand-logo">
+          <img
+            src="../assets/cafetec-logo.png"
+            alt="CafeTec"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';"
+          />
+
+          <div class="brand-fallback">☕</div>
+        </div>
+
+        <div class="brand-info">
+          <strong>CAFETEC</strong>
+          <span>Café de especialidad & tecnología</span>
+        </div>
+
+      </div>
+
+
+      <nav class="main-nav">
+
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">⌂</span>
+          <span>Resumen</span>
+        </button>
+
+        <button class="nav-item" data-view="products">
+          <span class="nav-icon">☕</span>
+          <span>Productos</span>
+        </button>
+
+        <button class="nav-item" data-view="orders">
+          <span class="nav-icon">▤</span>
+          <span>Pedidos</span>
+        </button>
+
+      </nav>
+
+
+      <div class="sidebar-message">
+        <strong>Buen café,</strong>
+        <span>mejores experiencias.</span>
+      </div>
+
+
+      <!-- Estado de API -->
+      <div class="api-box">
+
+        <div class="api-title">
+          <span>API</span>
+          <span id="connection" class="status offline">
+            Sin conectar
+          </span>
+        </div>
+
+        <div class="api-label">
+          DIRECCIÓN DEL SERVIDOR
+        </div>
+
+        <input
+          id="apiUrl"
+          value="http://localhost:3000"
+          aria-label="Dirección de la API"
+        />
+
+        <button id="saveApi" class="small-btn">
+          Conectar
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- =========================
+         CONTENIDO PRINCIPAL
+    ========================== -->
+    <main class="main">
+
+      <!-- Header -->
+      <header class="topbar">
+
+        <div class="page-heading">
+
+          <p class="eyebrow">
+            PANEL DEL GERENTE
+          </p>
+
+          <h1 id="pageTitle">
+            Resumen
+          </h1>
+
+        </div>
+
+
+        <div class="topbar-right">
+
+          <div class="administrator">
+
+            <div class="administrator-avatar">
+              AD
+            </div>
+
+            <div>
+              <span>Administrador</span>
+              <strong>CafeTec</strong>
+            </div>
+
+          </div>
+
+          <button id="refresh" class="refresh">
+            ↻ Actualizar
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <!-- =========================
+           RESUMEN
+      ========================== -->
+      <section id="dashboard" class="view active-view">
+
+        <div class="hero-card">
+
+          <div class="hero-content">
+
+            <p class="hero-label">
+              CAFETEC
+            </p>
+
+            <h2>
+              Controla tu menú<br>
+              y tus pedidos desde aquí.
+            </h2>
+
+            <p class="hero-description">
+              Administra productos, consulta pedidos y mantén
+              sincronizada la información con la aplicación móvil.
+            </p>
+
+          </div>
+
+
+          <div class="hero-decoration">
+
+            <div class="hero-circle">
+              <span>☕</span>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- Estadísticas -->
+        <div class="stats">
+
+          <article class="stat-card">
+
+            <div class="stat-top">
+              <span>Productos</span>
+              <span class="stat-icon">☕</span>
+            </div>
+
+            <strong id="statProducts">
+              —
+            </strong>
+
+            <small>
+              Disponibles en el menú
+            </small>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <div class="stat-top">
+              <span>Pedidos</span>
+              <span class="stat-icon">▤</span>
+            </div>
+
+            <strong id="statOrders">
+              —
+            </strong>
+
+            <small>
+              Registrados en el API
+            </small>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <div class="stat-top">
+              <span>Ventas</span>
+              <span class="stat-icon">$</span>
+            </div>
+
+            <strong id="statSales">
+              $0.00
+            </strong>
+
+            <small>
+              Total de pedidos
+            </small>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <div class="stat-top">
+              <span>Estado</span>
+              <span class="stat-icon">●</span>
+            </div>
+
+            <strong id="statApi">
+              —
+            </strong>
+
+            <small>
+              Conexión con API
+            </small>
+
+          </article>
+
+        </div>
+
+
+        <!-- Acciones rápidas -->
+        <div class="section-card quick-section">
+
+          <div class="section-head">
+
+            <div>
+              <h3>
+                Acciones rápidas
+              </h3>
+
+              <p>
+                Las funciones más utilizadas por administración.
+              </p>
+            </div>
+
+          </div>
+
+
+          <div class="quick-actions">
+
+            <button data-view="products">
+              <span>＋</span>
+              Agregar producto
+            </button>
+
+            <button data-view="orders">
+              <span>▤</span>
+              Ver pedidos
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =========================
+           PRODUCTOS
+      ========================== -->
+      <section id="products" class="view">
+
+        <div class="section-card">
+
+          <div class="section-head">
+
+            <div>
+              <h3>
+                Catálogo
+              </h3>
+
+              <p>
+                Alta, edición y eliminación de productos.
+              </p>
+            </div>
+
+            <button id="newProduct" class="primary">
+              ＋ Nuevo producto
+            </button>
+
+          </div>
+
+
+          <div class="toolbar">
+
+            <input
+              id="search"
+              placeholder="Buscar producto..."
+            />
+
+            <select id="categoryFilter">
+
+              <option value="">
+                Todas las categorías
+              </option>
+
+              <option value="hot-drinks">
+                Bebidas calientes
+              </option>
+
+              <option value="cold-drinks">
+                Bebidas frías
+              </option>
+
+              <option value="frappes">
+                Frappes
+              </option>
+
+              <option value="lunch">
+                Lunch
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div id="productsGrid" class="product-grid">
+
+            <div class="loading">
+              Cargando productos…
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =========================
+           PEDIDOS
+      ========================== -->
+      <section id="orders" class="view">
+
+        <div class="section-card">
+
+          <div class="section-head">
+
+            <div>
+              <h3>
+                Pedidos
+              </h3>
+
+              <p>
+                Consulta los pedidos que llegan desde la aplicación.
+              </p>
+
+            </div>
+
+            <span id="ordersCount" class="pill">
+              0
+            </span>
+
+          </div>
+
+
+          <div id="ordersList" class="orders-list">
+
+            <div class="loading">
+              Cargando pedidos…
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- Footer -->
+      <footer class="footer">
+
+        <strong>CafeTec</strong>
+
+        <span>
+          Café de especialidad & tecnología
+        </span>
+
+        <span class="footer-separator">
+          ·
+        </span>
+
+        <span>
+          v1.0.0
+        </span>
+
+      </footer>
+
+    </main>
+
+  </div>
+
+
+  <!-- =========================
+       MODAL PRODUCTO
+  ========================== -->
+  <div id="modal" class="modal hidden">
+
+    <div class="modal-card">
+
+      <button
+        id="closeModal"
+        class="close"
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
+
+
+      <div class="modal-header">
+
+        <p class="eyebrow">
+          CATÁLOGO
+        </p>
+
+        <h3 id="modalTitle">
+          Nuevo producto
+        </h3>
+
+        <p class="modal-subtitle">
+          Los datos se guardan directamente en el API.
+        </p>
+
+      </div>
+
+
+      <form id="productForm">
+
+        <div class="form-grid">
+
+          <label>
+            ID
+
+            <input
+              id="f_id"
+              required
+              placeholder="ej. cold-matcha"
+            />
+
+          </label>
+
+
+          <label>
+            Nombre
+
+            <input
+              id="f_name"
+              required
+              placeholder="Nombre del producto"
+            />
+
+          </label>
+
+
+          <label>
+            Categoría
+
+            <select id="f_category" required>
+
+              <option value="hot-drinks">
+                Bebidas calientes
+              </option>
+
+              <option value="cold-drinks">
+                Bebidas frías
+              </option>
+
+              <option value="frappes">
+                Frappes
+              </option>
+
+              <option value="lunch">
+                Lunch
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+            Precio
+
+            <input
+              id="f_price"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+            />
+
+          </label>
+
+        </div>
+
+
+        <label>
+          Descripción
+
+          <textarea
+            id="f_description"
+            rows="3"
+            required
+          ></textarea>
+
+        </label>
+
+
+        <label>
+          URL de imagen
+
+          <input
+            id="f_imageUrl"
+            type="url"
+            placeholder="https://... (opcional)"
+          />
+
+        </label>
+
+
+        <div id="formError" class="form-error"></div>
+
+
+        <div class="form-actions">
+
+          <button
+            type="button"
+            id="cancelForm"
+            class="secondary"
+          >
+            Cancelar
+          </button>
+
+          <button
+            class="primary"
+            type="submit"
+          >
+            Guardar producto
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- Notificaciones -->
+  <div id="toast" class="toast"></div>
+
+
+  <script src="./app.js"></script>
+
+</body>
+</html>
