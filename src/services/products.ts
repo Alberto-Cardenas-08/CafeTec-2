@@ -2,6 +2,7 @@ import type { ImageSource } from "expo-image";
 
 import catalog from "@/data/products.json";
 import { getApiUrl } from "@/services/api";
+import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
 export type ProductCategory = "hot-drinks" | "cold-drinks" | "frappes" | "lunch";
 
@@ -24,7 +25,23 @@ type CatalogProduct = {
   imageFile: string;
 };
 
-type ApiProduct = Omit<Product, "image"> & { imageUrl?: string };
+type ApiProduct = {
+  id: string;
+  category: ProductCategory;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl?: string;
+};
+
+type SupabaseProductRow = {
+  id: string;
+  category: string;
+  name: string;
+  description: string;
+  price: number | string;
+  image_url: string | null;
+};
 
 const catalogProducts = catalog as CatalogProduct[];
 
@@ -63,7 +80,37 @@ function getImage(image: string): ImageSource {
   }
 }
 
+function mapProduct(item: ApiProduct): Product {
+  return {
+    ...item,
+    category: item.category as ProductCategory,
+    price: Number(item.price),
+    image: item.imageUrl ? { uri: item.imageUrl } : getFallbackImage(item.id),
+  };
+}
+
+async function getProductsFromSupabase(category?: ProductCategory): Promise<Product[]> {
+  let query = getSupabase().from("products").select("id, category, name, description, price, image_url").order("name");
+  if (category) query = query.eq("category", category);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row: SupabaseProductRow) =>
+    mapProduct({
+      id: row.id,
+      category: row.category as ProductCategory,
+      name: row.name,
+      description: row.description,
+      price: Number(row.price),
+      imageUrl: row.image_url || undefined,
+    }),
+  );
+}
+
 export async function getProducts(category: ProductCategory): Promise<Product[]> {
+  if (isSupabaseConfigured()) {
+    return getProductsFromSupabase(category);
+  }
+
   const apiUrl = getApiUrl();
   const response = await fetch(`${apiUrl}/api/products?category=${category}`);
   if (!response.ok) {
@@ -78,11 +125,7 @@ export async function getProducts(category: ProductCategory): Promise<Product[]>
     if (!isApiProduct(item)) {
       throw new Error("La API devolvió un producto inválido.");
     }
-    return {
-      ...item,
-      category: item.category as ProductCategory,
-      image: item.imageUrl ? { uri: item.imageUrl } : getFallbackImage(item.id),
-    };
+    return mapProduct(item);
   });
 }
 

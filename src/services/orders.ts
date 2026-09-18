@@ -1,4 +1,5 @@
 import { getApiUrl } from "@/services/api";
+import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
 export const ORDER_STATUSES = ["recibido", "en_preparacion", "listo", "entregado"] as const;
 
@@ -67,52 +68,121 @@ export function isOrder(value: unknown): value is Order {
     Array.isArray(order.items);
 }
 
+type OrderRow = {
+  id: string;
+  created_at: string;
+  customer_name: string;
+  note: string;
+  status: string;
+  total: number | string;
+  order_items?: {
+    product_id: string;
+    name: string;
+    quantity: number;
+    unit_price: number | string;
+    line_total: number | string;
+  }[];
+};
+
+function mapOrderRow(row: OrderRow): Order {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    customerName: row.customer_name ?? "",
+    note: row.note ?? "",
+    status: row.status as Order["status"],
+    total: Number(row.total),
+    items: (row.order_items ?? []).map((item) => ({
+      productId: item.product_id,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: Number(item.unit_price),
+      lineTotal: Number(item.line_total),
+    })),
+  };
+}
+
 export async function createOrder(input: {
   customerName: string;
   note?: string;
   items: OrderItemPayload[];
 }): Promise<Order> {
+  if (isSupabaseConfigured()) {
+    const { data, error } = await getSupabase().rpc("create_cafetec_order", {
+      p_customer_name: input.customerName,
+      p_note: input.note ?? "",
+      p_items: input.items,
+    });
+    if (error) throw new Error(error.message);
+    if (!isOrder(data)) throw new Error("Supabase devolvió un pedido inválido.");
+    return {
+      ...data,
+      createdAt: String(data.createdAt),
+      total: Number(data.total),
+    };
+  }
+
   const response = await fetch(`${getApiUrl()}/api/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
 
-  const data: unknown = await response.json().catch(() => null);
+  const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(readError(data, `No se pudo crear el pedido (${response.status}).`));
+    throw new Error(readError(payload, `No se pudo crear el pedido (${response.status}).`));
   }
-  if (!isOrder(data)) {
+  if (!isOrder(payload)) {
     throw new Error("La API devolvió un pedido inválido.");
   }
-  return data;
+  return payload;
 }
 
 export async function getOrder(id: string): Promise<Order> {
+  if (isSupabaseConfigured()) {
+    const { data, error } = await getSupabase()
+      .from("orders")
+      .select("id, created_at, customer_name, note, status, total, order_items(product_id, name, quantity, unit_price, line_total)")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("Caja no encontró este pedido.");
+    return mapOrderRow(data as OrderRow);
+  }
+
   const response = await fetch(`${getApiUrl()}/api/orders/${encodeURIComponent(id)}`);
-  const data: unknown = await response.json().catch(() => null);
+  const payload: unknown = await response.json().catch(() => null);
   if (response.status === 404) {
     throw new Error("Caja no encontró este pedido. Si reiniciaron la API, pide de nuevo.");
   }
   if (!response.ok) {
-    throw new Error(readError(data, `No se pudo consultar el pedido (${response.status}).`));
+    throw new Error(readError(payload, `No se pudo consultar el pedido (${response.status}).`));
   }
-  if (!isOrder(data)) {
+  if (!isOrder(payload)) {
     throw new Error("La API devolvió un pedido inválido.");
   }
-  return data;
+  return payload;
 }
 
 export async function getOrdersByIds(ids: string[]): Promise<Order[]> {
   if (ids.length === 0) return [];
+  if (isSupabaseConfigured()) {
+    const { data, error } = await getSupabase()
+      .from("orders")
+      .select("id, created_at, customer_name, note, status, total, order_items(product_id, name, quantity, unit_price, line_total)")
+      .in("id", ids);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: OrderRow) => mapOrderRow(row));
+  }
+
   const query = ids.map((id) => encodeURIComponent(id)).join(",");
   const response = await fetch(`${getApiUrl()}/api/orders?ids=${query}`);
-  const data: unknown = await response.json().catch(() => null);
+  const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(readError(data, `No se pudieron actualizar los pedidos (${response.status}).`));
+    throw new Error(readError(payload, `No se pudieron actualizar los pedidos (${response.status}).`));
   }
-  if (!Array.isArray(data)) {
+  if (!Array.isArray(payload)) {
     throw new Error("La API devolvió un formato de pedidos inválido.");
   }
-  return data.filter(isOrder);
+  return payload.filter(isOrder);
 }

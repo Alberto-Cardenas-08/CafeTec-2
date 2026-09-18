@@ -75,13 +75,24 @@
         </div>
 
         <div class="api-label">
-          DIRECCIÓN DEL SERVIDOR
+          SUPABASE URL
         </div>
 
         <input
           id="apiUrl"
-          value="http://localhost:3000"
-          aria-label="Dirección de la API"
+          value="https://afqycxwuvzmksompycco.supabase.co"
+          aria-label="URL de Supabase"
+        />
+
+        <div class="api-label">
+          ANON KEY
+        </div>
+
+        <input
+          id="anonKey"
+          type="password"
+          placeholder="Project Settings → API → anon public"
+          aria-label="Anon key de Supabase"
         />
 
         <button id="saveApi" class="small-btn">
