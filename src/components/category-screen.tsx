@@ -4,14 +4,14 @@ import { Link } from "expo-router";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { CafeStatusBanner } from "@/components/cafe-status-banner";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { CART_LIMIT, useCart } from "@/context/cart-context";
 import { useMenuProducts } from "@/hooks/use-menu-products";
-import type { ProductCategory } from "@/services/products";
 
 type CategoryScreenProps = {
-  category: ProductCategory;
+  category: string;
   title: string;
   description: string;
   color: string;
@@ -64,6 +64,8 @@ export function CategoryScreen({
             </View>
           </View>
 
+          <CafeStatusBanner />
+
           {error ? <ThemedText style={styles.apiError}>{error}</ThemedText> : null}
 
           <View style={styles.products}>
@@ -82,6 +84,9 @@ export function CategoryScreen({
                     <ThemedText style={styles.productName}>{product.name}</ThemedText>
                     <ThemedText style={styles.productDescription}>{product.description}</ThemedText>
                     <ThemedText style={styles.productPrice}>${product.price}</ThemedText>
+                    {!product.available ? (
+                      <ThemedText style={styles.soldOut}>Agotado</ThemedText>
+                    ) : null}
                   </View>
                   <View style={styles.addWrap}>
                     {quantity > 0 ? (
@@ -90,8 +95,12 @@ export function CategoryScreen({
                       </View>
                     ) : null}
                     <Pressable
-                      style={styles.addButton}
+                      style={[styles.addButton, !product.available && styles.addDisabled]}
                       onPress={() => {
+                        if (!product.available) {
+                          Alert.alert("Agotado", `${product.name} no se puede agregar al carrito.`);
+                          return;
+                        }
                         if (!addProduct(product)) {
                           Alert.alert(
                             "Pedido lleno",
@@ -269,6 +278,15 @@ const styles = StyleSheet.create({
     color: "#57301c",
     fontSize: 18,
     fontWeight: "700",
+  },
+  soldOut: {
+    color: "#a33a2b",
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  addDisabled: {
+    backgroundColor: "#c9b8ab",
   },
   addWrap: {
     alignItems: "center",

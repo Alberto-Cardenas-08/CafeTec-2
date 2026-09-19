@@ -1,10 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { AppState } from "react-native";
 
-import { getOrdersByIds, isOrder, type Order } from "@/services/orders";
+import { getDeviceId } from "@/services/device";
+import { getOrdersByDeviceId, getOrdersByIds, isOrder, type Order } from "@/services/orders";
+import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
 type OrdersContextValue = {
   orders: Order[];
+  deviceId: string;
   lastCustomerName: string;
   rememberOrder: (order: Order) => void;
   refreshOrders: () => Promise<void>;
@@ -17,6 +21,7 @@ const NAME_STORAGE_KEY = "cafetec-customer-name";
 
 export function OrdersProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [deviceId, setDeviceId] = useState("");
   const [lastCustomerName, setLastCustomerNameState] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
   const ordersRef = useRef<Order[]>([]);
@@ -29,8 +34,10 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     Promise.all([
       AsyncStorage.getItem(ORDERS_STORAGE_KEY),
       AsyncStorage.getItem(NAME_STORAGE_KEY),
+      getDeviceId(),
     ])
-      .then(([storedOrders, storedName]) => {
+      .then(([storedOrders, storedName, id]) => {
+        setDeviceId(id);
         if (storedOrders) {
           try {
             const parsed: unknown = JSON.parse(storedOrders);
@@ -74,14 +81,36 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshOrders = useCallback(async () => {
+    const byDevice = deviceId ? await getOrdersByDeviceId(deviceId).catch(() => []) : [];
     const ids = ordersRef.current.map((order) => order.id);
-    if (ids.length === 0) return;
-    const latest = await getOrdersByIds(ids);
-    if (latest.length === 0) return;
-    setOrders((current) =>
-      current.map((order) => latest.find((item) => item.id === order.id) ?? order),
-    );
-  }, []);
+    const byIds = ids.length ? await getOrdersByIds(ids) : [];
+    const merged = new Map<string, Order>();
+    for (const order of [...byIds, ...byDevice]) merged.set(order.id, order);
+    if (merged.size === 0) return;
+    setOrders(Array.from(merged.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+  }, [deviceId]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !isLoaded) return undefined;
+    const pull = () => refreshOrders().catch(() => undefined);
+    const channel = getSupabase()
+      .channel("my-orders")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        pull,
+      )
+      .subscribe();
+    const timer = setInterval(pull, 4000);
+    const app = AppState.addEventListener("change", (next) => {
+      if (next === "active") pull();
+    });
+    return () => {
+      clearInterval(timer);
+      app.remove();
+      getSupabase().removeChannel(channel);
+    };
+  }, [isLoaded, refreshOrders]);
 
   const setLastCustomerName = useCallback((name: string) => {
     setLastCustomerNameState(name.trim());
@@ -89,11 +118,12 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<OrdersContextValue>(() => ({
     orders,
+    deviceId,
     lastCustomerName,
     rememberOrder,
     refreshOrders,
     setLastCustomerName,
-  }), [lastCustomerName, orders, refreshOrders, rememberOrder, setLastCustomerName]);
+  }), [deviceId, lastCustomerName, orders, refreshOrders, rememberOrder, setLastCustomerName]);
 
   return <OrdersContext.Provider value={value}>{children}</OrdersContext.Provider>;
 }

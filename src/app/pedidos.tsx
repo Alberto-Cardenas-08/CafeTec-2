@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { CafeStatusBanner } from "@/components/cafe-status-banner";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useOrders } from "@/context/orders-context";
@@ -14,7 +15,17 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   en_preparacion: "#57301c",
   listo: "#2f7d4a",
   entregado: "#795e4d",
+  cancelado: "#a33a2b",
 };
+
+const FILTERS: { id: "all" | OrderStatus; label: string }[] = [
+  { id: "all", label: "Todas" },
+  { id: "recibido", label: "Pendientes" },
+  { id: "en_preparacion", label: "En preparación" },
+  { id: "listo", label: "Listas" },
+  { id: "entregado", label: "Entregadas" },
+  { id: "cancelado", label: "Canceladas" },
+];
 
 function formatWhen(iso: string) {
   const date = new Date(iso);
@@ -28,6 +39,8 @@ export default function OrdersScreen() {
   const [lookupId, setLookupId] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
+  const [filter, setFilter] = useState<"all" | OrderStatus>("all");
+  const visible = filter === "all" ? orders : orders.filter((order) => order.status === filter);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,6 +91,7 @@ export default function OrdersScreen() {
           <ThemedText style={styles.intro}>
             Consulta si tu pedido ya lo recibieron, lo están preparando o está listo para recoger.
           </ThemedText>
+          <CafeStatusBanner />
 
           <View style={styles.lookup}>
             <TextInput
@@ -99,6 +113,20 @@ export default function OrdersScreen() {
 
           {refreshing ? <ThemedText style={styles.refresh}>Actualizando estados…</ThemedText> : null}
 
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+            {FILTERS.map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => setFilter(item.id)}
+                style={[styles.chip, filter === item.id && styles.chipActive]}
+              >
+                <ThemedText style={[styles.chipText, filter === item.id && styles.chipTextActive]}>
+                  {item.label}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </ScrollView>
+
           {orders.length === 0 ? (
             <View style={styles.emptyBox}>
               <Ionicons name="receipt-outline" size={36} color="#d07f30" />
@@ -107,7 +135,7 @@ export default function OrdersScreen() {
               </ThemedText>
             </View>
           ) : (
-            orders.map((order) => (
+            visible.map((order) => (
               <OrderCard
                 key={order.id}
                 order={order}
@@ -151,6 +179,11 @@ const styles = StyleSheet.create({
   content: { padding: 18, paddingBottom: 40 },
   title: { color: "#24150e", fontSize: 28, fontWeight: "700", marginBottom: 8 },
   intro: { color: "#795e4d", fontSize: 15, lineHeight: 22, marginBottom: 18 },
+  filters: { gap: 8, paddingBottom: 16 },
+  chip: { backgroundColor: "#fff", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
+  chipActive: { backgroundColor: "#57301c" },
+  chipText: { color: "#57301c", fontWeight: "700", fontSize: 13 },
+  chipTextActive: { color: "#fffaf5" },
   lookup: { flexDirection: "row", gap: 8, marginBottom: 16 },
   input: {
     flex: 1,

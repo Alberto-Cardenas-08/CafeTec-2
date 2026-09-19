@@ -5,6 +5,14 @@ import { ThemedText } from "@/components/themed-text";
 import { STATUS_STEPS, statusIndex, type OrderStatus } from "@/services/orders";
 
 export function OrderStatusTrack({ status }: { status: OrderStatus }) {
+  if (status === "cancelado") {
+    return (
+      <View style={styles.track}>
+        <ThemedText style={styles.cancelled}>Este pedido fue cancelado.</ThemedText>
+      </View>
+    );
+  }
+
   const current = statusIndex(status);
 
   return (
@@ -111,5 +119,11 @@ const styles = StyleSheet.create({
     color: "#795e4d",
     fontSize: 13,
     marginTop: 4,
+  },
+  cancelled: {
+    color: "#a33a2b",
+    fontSize: 16,
+    fontWeight: "700",
+    paddingVertical: 8,
   },
 });

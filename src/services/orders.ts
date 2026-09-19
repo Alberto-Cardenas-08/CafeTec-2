@@ -1,7 +1,7 @@
 import { getApiUrl } from "@/services/api";
 import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
-export const ORDER_STATUSES = ["recibido", "en_preparacion", "listo", "entregado"] as const;
+export const ORDER_STATUSES = ["recibido", "en_preparacion", "listo", "entregado", "cancelado"] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
@@ -16,6 +16,7 @@ export type OrderLine = {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  imageUrl?: string;
 };
 
 export type Order = {
@@ -26,6 +27,7 @@ export type Order = {
   status: OrderStatus;
   items: OrderLine[];
   total: number;
+  deviceId?: string;
 };
 
 export const STATUS_STEPS: {
@@ -45,6 +47,7 @@ export function statusIndex(status: OrderStatus) {
 }
 
 export function statusLabel(status: OrderStatus) {
+  if (status === "cancelado") return "Cancelado";
   return STATUS_STEPS[statusIndex(status)]?.label ?? "Recibido";
 }
 
@@ -75,12 +78,14 @@ type OrderRow = {
   note: string;
   status: string;
   total: number | string;
+  device_id?: string;
   order_items?: {
     product_id: string;
     name: string;
     quantity: number;
     unit_price: number | string;
     line_total: number | string;
+    image_url?: string | null;
   }[];
 };
 
@@ -92,12 +97,14 @@ function mapOrderRow(row: OrderRow): Order {
     note: row.note ?? "",
     status: row.status as Order["status"],
     total: Number(row.total),
+    deviceId: row.device_id,
     items: (row.order_items ?? []).map((item) => ({
       productId: item.product_id,
       name: item.name,
       quantity: item.quantity,
       unitPrice: Number(item.unit_price),
       lineTotal: Number(item.line_total),
+      imageUrl: item.image_url || undefined,
     })),
   };
 }
@@ -106,12 +113,14 @@ export async function createOrder(input: {
   customerName: string;
   note?: string;
   items: OrderItemPayload[];
+  deviceId?: string;
 }): Promise<Order> {
   if (isSupabaseConfigured()) {
     const { data, error } = await getSupabase().rpc("create_cafetec_order", {
       p_customer_name: input.customerName,
       p_note: input.note ?? "",
       p_items: input.items,
+      p_device_id: input.deviceId ?? "",
     });
     if (error) throw new Error(error.message);
     if (!isOrder(data)) throw new Error("Supabase devolvió un pedido inválido.");
@@ -142,7 +151,7 @@ export async function getOrder(id: string): Promise<Order> {
   if (isSupabaseConfigured()) {
     const { data, error } = await getSupabase()
       .from("orders")
-      .select("id, created_at, customer_name, note, status, total, order_items(product_id, name, quantity, unit_price, line_total)")
+      .select("id, created_at, customer_name, note, status, total, device_id, order_items(product_id, name, quantity, unit_price, line_total, image_url)")
       .eq("id", id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -169,7 +178,7 @@ export async function getOrdersByIds(ids: string[]): Promise<Order[]> {
   if (isSupabaseConfigured()) {
     const { data, error } = await getSupabase()
       .from("orders")
-      .select("id, created_at, customer_name, note, status, total, order_items(product_id, name, quantity, unit_price, line_total)")
+      .select("id, created_at, customer_name, note, status, total, device_id, order_items(product_id, name, quantity, unit_price, line_total, image_url)")
       .in("id", ids);
     if (error) throw new Error(error.message);
     return (data ?? []).map((row: OrderRow) => mapOrderRow(row));
@@ -185,4 +194,15 @@ export async function getOrdersByIds(ids: string[]): Promise<Order[]> {
     throw new Error("La API devolvió un formato de pedidos inválido.");
   }
   return payload.filter(isOrder);
+}
+
+export async function getOrdersByDeviceId(deviceId: string): Promise<Order[]> {
+  if (!deviceId || !isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase()
+    .from("orders")
+    .select("id, created_at, customer_name, note, status, total, device_id, order_items(product_id, name, quantity, unit_price, line_total, image_url)")
+    .eq("device_id", deviceId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row: OrderRow) => mapOrderRow(row));
 }

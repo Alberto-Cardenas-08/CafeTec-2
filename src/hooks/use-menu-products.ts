@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 
-import { getProducts, localProducts, type Product, type ProductCategory } from "@/services/products";
+import { getProducts, localProducts, type Product } from "@/services/products";
+import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
-export function useMenuProducts(category: ProductCategory) {
+export function useMenuProducts(category: string) {
   const [products, setProducts] = useState<Product[]>(() =>
     localProducts.filter((product) => product.category === category),
   );
@@ -27,6 +28,24 @@ export function useMenuProducts(category: ProductCategory) {
   }, [category]);
 
   useFocusEffect(refresh);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return undefined;
+    const pull = () => {
+      getProducts(category)
+        .then(setProducts)
+        .catch(() => undefined);
+    };
+    const channel = getSupabase()
+      .channel(`menu-${category}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, pull)
+      .subscribe();
+    const timer = setInterval(pull, 5000);
+    return () => {
+      clearInterval(timer);
+      getSupabase().removeChannel(channel);
+    };
+  }, [category]);
 
   return { products, error };
 }

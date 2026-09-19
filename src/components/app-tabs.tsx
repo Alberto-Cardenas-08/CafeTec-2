@@ -42,6 +42,7 @@ export default function AppTabs() {
         }}
       />
       <Tabs.Screen name="pedido" options={{ href: null }} />
+      <Tabs.Screen name="categoria/[id]" options={{ href: null }} />
       <Tabs.Screen name="bebidas-calientes" options={{ href: null }} />
       <Tabs.Screen name="bebidas-frias" options={{ href: null }} />
       <Tabs.Screen name="frappes" options={{ href: null }} />

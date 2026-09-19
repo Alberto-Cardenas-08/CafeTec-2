@@ -56,6 +56,9 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
 ```
 
 5. Reinicia Expo (`npm start`).
+6. Corre también `supabase/mvp.sql` (agotado, abierta/cerrada, cancelado, fotos, realtime).
+7. Corre `supabase/categories.sql` para categorías nuevas desde caja.
+7. En **Authentication → Users → Add user** crea el correo y contraseña de caja. Con eso entra el panel `admin-web`.
 
 El panel de caja (`admin-web/`) usa la misma URL. Pega ahí la anon key y pulsa **Conectar**.
 

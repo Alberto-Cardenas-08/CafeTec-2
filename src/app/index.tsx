@@ -1,51 +1,55 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { CafeStatusBanner } from "@/components/cafe-status-banner";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useCart } from "@/context/cart-context";
-
-const categories = [
-  {
-    title: "Bebidas\nCalientes",
-    image: require("@/assets/images/Bebida-caliente.png"),
-    iconType: "MaterialCommunityIcons",
-    iconName: "coffee-outline",
-    color: "#57301c",
-    route: "/bebidas-calientes",
-  },
-  {
-    title: "Bebidas\nFrías",
-    image: require("@/assets/images/Bebidas-frias.png"),
-    iconType: "MaterialCommunityIcons",
-    iconName: "cup-water",
-    color: "#d07f30",
-    route: "/bebidas-frias",
-  },
-  {
-    title: "Frappes",
-    image: require("@/assets/images/Frappes.png"),
-    iconType: "MaterialCommunityIcons",
-    iconName: "cup-outline",
-    color: "#dfb887",
-    route: "/frappes",
-  },
-  {
-    title: "Lunch",
-    image: require("@/assets/images/Lunch.png"),
-    iconType: "Ionicons",
-    iconName: "fast-food-outline",
-    color: "#57301c",
-    route: "/lunch",
-  },
-];
+import { FALLBACK_CATEGORIES, getCategories, type MenuCategory } from "@/services/categories";
+import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { totalItems } = useCart();
+  const [categories, setCategories] = useState<MenuCategory[]>(FALLBACK_CATEGORIES);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      getCategories()
+        .then((items) => {
+          if (active && items.length) setCategories(items);
+        })
+        .catch(() => undefined);
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return undefined;
+    const pull = () => {
+      getCategories()
+        .then((items) => {
+          if (items.length) setCategories(items);
+        })
+        .catch(() => undefined);
+    };
+    const channel = getSupabase()
+      .channel("home-categories")
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, pull)
+      .subscribe();
+    const timer = setInterval(pull, 8000);
+    return () => {
+      clearInterval(timer);
+      getSupabase().removeChannel(channel);
+    };
+  }, []);
 
   return (
     <ThemedView style={styles.container}>
@@ -96,6 +100,7 @@ export default function HomeScreen() {
           <ThemedText style={styles.intro}>
             Elige tu categoría y descubre{"\n"}tus favoritos
           </ThemedText>
+          <CafeStatusBanner />
 
           {/* =========================
               CATEGORÍAS
@@ -104,8 +109,8 @@ export default function HomeScreen() {
           <View style={styles.categories}>
             {categories.map((category) => (
               <Pressable
-                key={category.title}
-                onPress={() => router.push(category.route as never)}
+                key={category.id}
+                onPress={() => router.push({ pathname: "/categoria/[id]", params: { id: category.id } } as never)}
                 style={({ pressed }) => [
                   styles.category,
                   {
@@ -114,43 +119,19 @@ export default function HomeScreen() {
                   pressed && styles.pressed,
                 ]}
               >
-                {/* =========================
-                    IMAGEN DEL PRODUCTO
-                    ========================= */}
-
                 <Image
                   source={category.image}
                   style={styles.categoryImage}
                   contentFit="contain"
                 />
 
-                {/* =========================
-                    ICONO CIRCULAR
-                    ========================= */}
-
                 <View style={styles.categoryIcon}>
-                  {category.iconType === "Ionicons" ? (
-                    <Ionicons
-                      name={category.iconName as any}
-                      size={32}
-                      color="#fffaf5"
-                    />
-                  ) : (
-                    <MaterialCommunityIcons
-                      name={category.iconName as any}
-                      size={32}
-                      color="#fffaf5"
-                    />
-                  )}
+                  <Ionicons name="cafe-outline" size={32} color="#fffaf5" />
                 </View>
-
-                {/* =========================
-                    TEXTO
-                    ========================= */}
 
                 <View style={styles.categoryCopy}>
                   <ThemedText style={styles.categoryTitle}>
-                    {category.title}
+                    {category.name}
                   </ThemedText>
                 </View>
 
@@ -277,6 +258,16 @@ const styles = StyleSheet.create({
     lineHeight: 26,
 
     marginBottom: 14,
+  },
+
+  closedBanner: {
+    color: "#a33a2b",
+    backgroundColor: "#f8e8e4",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
   },
 
   /* =========================

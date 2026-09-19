@@ -23,6 +23,7 @@ export default function OrderDetailScreen() {
   const { orders, rememberOrder } = useOrders();
   const cached = orders.find((order) => order.id === id);
   const [order, setOrder] = useState(cached);
+  const live = orders.find((item) => item.id === id) ?? order;
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!cached);
 
@@ -70,26 +71,26 @@ export default function OrderDetailScreen() {
             <View style={styles.headerSpace} />
           </View>
 
-          {loading && !order ? (
+          {loading && !live ? (
             <ActivityIndicator color="#57301c" style={styles.loader} />
           ) : null}
 
-          {error && !order ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+          {error && !live ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
-          {order ? (
+          {live ? (
             <>
-              <ThemedText style={styles.orderId}>{order.id}</ThemedText>
+              <ThemedText style={styles.orderId}>{live.id}</ThemedText>
               <ThemedText style={styles.meta}>
-                {order.customerName} · {formatWhen(order.createdAt)}
+                {live.customerName} · {formatWhen(live.createdAt)}
               </ThemedText>
               <ThemedText style={styles.statusNow}>
-                Ahora: {statusLabel(order.status)}
+                Ahora: {statusLabel(live.status)}
               </ThemedText>
 
-              <OrderStatusTrack status={order.status} />
+              <OrderStatusTrack status={live.status} />
 
               <ThemedText style={styles.section}>Tu pedido</ThemedText>
-              {order.items.map((item) => (
+              {live.items.map((item) => (
                 <View key={`${item.productId}-${item.name}`} style={styles.item}>
                   <Image source={getProductImage(item.productId)} style={styles.image} contentFit="contain" />
                   <View style={styles.itemInfo}>
@@ -102,13 +103,13 @@ export default function OrderDetailScreen() {
                 </View>
               ))}
 
-              {order.note ? (
-                <ThemedText style={styles.note}>Nota: {order.note}</ThemedText>
+              {live.note ? (
+                <ThemedText style={styles.note}>Nota: {live.note}</ThemedText>
               ) : null}
 
               <View style={styles.totalBox}>
                 <ThemedText style={styles.totalLabel}>Total</ThemedText>
-                <ThemedText style={styles.totalValue}>${order.total}</ThemedText>
+                <ThemedText style={styles.totalValue}>${live.total}</ThemedText>
               </View>
 
               <ThemedText style={styles.footnote}>

@@ -11,6 +11,18 @@
 
 <body>
 
+  <div id="loginGate" class="login-gate">
+    <form id="loginForm" class="login-card">
+      <p class="eyebrow">CAJA</p>
+      <h2>Iniciar sesión</h2>
+      <p>Solo el personal de CafeTec.</p>
+      <label>Correo<input id="loginEmail" type="email" required placeholder="caja@cafetec.com" /></label>
+      <label>Contraseña<input id="loginPassword" type="password" required /></label>
+      <p id="loginError" class="form-error"></p>
+      <button type="submit" class="primary">Entrar</button>
+    </form>
+  </div>
+
   <div class="app-shell">
 
     <!-- =========================
@@ -50,9 +62,24 @@
           <span>Productos</span>
         </button>
 
+        <button class="nav-item" data-view="categories">
+          <span class="nav-icon">▣</span>
+          <span>Categorías</span>
+        </button>
+
         <button class="nav-item" data-view="orders">
           <span class="nav-icon">▤</span>
           <span>Pedidos</span>
+        </button>
+
+        <button class="nav-item" data-view="corte">
+          <span class="nav-icon">$</span>
+          <span>Corte del día</span>
+        </button>
+
+        <button class="nav-item" data-view="tickets">
+          <span class="nav-icon">☰</span>
+          <span>Tickets</span>
         </button>
 
       </nav>
@@ -64,41 +91,17 @@
       </div>
 
 
-      <!-- Estado de API -->
       <div class="api-box">
-
         <div class="api-title">
-          <span>API</span>
-          <span id="connection" class="status offline">
-            Sin conectar
-          </span>
+          <span>Caja</span>
+          <span id="connection" class="status offline">Sin conectar</span>
         </div>
-
-        <div class="api-label">
-          SUPABASE URL
-        </div>
-
-        <input
-          id="apiUrl"
-          value="https://afqycxwuvzmksompycco.supabase.co"
-          aria-label="URL de Supabase"
-        />
-
-        <div class="api-label">
-          ANON KEY
-        </div>
-
-        <input
-          id="anonKey"
-          type="password"
-          placeholder="Project Settings → API → anon public"
-          aria-label="Anon key de Supabase"
-        />
-
-        <button id="saveApi" class="small-btn">
-          Conectar
+        <button id="cafeToggle" class="cafe-banner is-open" type="button">
+          <span class="cafe-dot"></span>
+          <strong id="cafeBannerTitle">Cafetería abierta</strong>
+          <span id="cafeBannerText">Los alumnos ya pueden pedir</span>
         </button>
-
+        <button id="logout" class="small-btn" type="button">Cerrar sesión</button>
       </div>
 
     </aside>
@@ -334,27 +337,7 @@
             />
 
             <select id="categoryFilter">
-
-              <option value="">
-                Todas las categorías
-              </option>
-
-              <option value="hot-drinks">
-                Bebidas calientes
-              </option>
-
-              <option value="cold-drinks">
-                Bebidas frías
-              </option>
-
-              <option value="frappes">
-                Frappes
-              </option>
-
-              <option value="lunch">
-                Lunch
-              </option>
-
+              <option value="">Todas las categorías</option>
             </select>
 
           </div>
@@ -372,6 +355,19 @@
 
       </section>
 
+
+      <section id="categories" class="view">
+        <div class="section-card">
+          <div class="section-head">
+            <div>
+              <h3>Categorías</h3>
+              <p>Las que crees aquí aparecen en el menú de la app.</p>
+            </div>
+            <button id="newCategory" class="primary" type="button">＋ Nueva categoría</button>
+          </div>
+          <div id="categoriesGrid" class="product-grid"></div>
+        </div>
+      </section>
 
       <!-- =========================
            PEDIDOS
@@ -399,6 +395,20 @@
 
           </div>
 
+          <div class="orders-toolbar">
+            <label>Día
+              <input id="orderDate" type="date" />
+            </label>
+            <div id="orderFilter" class="status-bubbles filter-bubbles">
+              <button type="button" class="status-bubble is-active" data-filter="all">Todas</button>
+              <button type="button" class="status-bubble status-recibido" data-filter="recibido">Pendientes</button>
+              <button type="button" class="status-bubble status-en_preparacion" data-filter="en_preparacion">En preparación</button>
+              <button type="button" class="status-bubble status-listo" data-filter="listo">Listas</button>
+              <button type="button" class="status-bubble status-entregado" data-filter="entregado">Entregadas</button>
+              <button type="button" class="status-bubble status-cancelado" data-filter="cancelado">Canceladas</button>
+            </div>
+          </div>
+
 
           <div id="ordersList" class="orders-list">
 
@@ -410,6 +420,70 @@
 
         </div>
 
+      </section>
+
+
+      <section id="corte" class="view">
+        <div class="section-card">
+          <div class="section-head">
+            <div>
+              <h3>Corte de ventas</h3>
+              <p>Suma lo vendido en la app. Los cancelados no entran.</p>
+            </div>
+            <div class="corte-actions">
+              <button id="excelCorte" class="secondary" type="button">Descargar Excel</button>
+              <button id="printCorte" class="primary" type="button">Imprimir PDF</button>
+            </div>
+          </div>
+          <div class="orders-toolbar">
+            <label>Desde
+              <input id="corteFrom" type="date" />
+            </label>
+            <label>Hasta
+              <input id="corteTo" type="date" />
+            </label>
+          </div>
+          <div id="corteSummary" class="stats corte-stats"></div>
+          <div id="corteTable"></div>
+          <div id="cortePrint" class="corte-print"></div>
+        </div>
+      </section>
+
+
+      <section id="tickets" class="view">
+        <div class="tickets-layout">
+          <div class="section-card">
+            <div class="section-head">
+              <div>
+                <h3>Tickets de caja</h3>
+                <p>Elige un pedido, previsualiza el ticket e imprímelo o simúlalo.</p>
+              </div>
+            </div>
+            <label class="date-label">Día
+              <input id="ticketDate" type="date" />
+            </label>
+            <div id="ticketOrders" class="ticket-orders"></div>
+          </div>
+          <div class="section-card ticket-preview-card">
+            <div class="section-head">
+              <div>
+                <h3>Vista previa</h3>
+                <p>Así sale en una impresora de 80 mm.</p>
+              </div>
+              <div class="corte-actions">
+                <button id="simulateTicket" class="secondary" type="button">Simular impresión</button>
+                <button id="printTicket" class="primary" type="button">Imprimir ticket</button>
+              </div>
+            </div>
+            <div id="ticketStage" class="ticket-stage">
+              <div id="ticketPaper" class="ticket-paper">
+                <div id="ticketPreview" class="ticket-preview">
+                  <p class="empty">Selecciona un pedido para ver el ticket.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
 
@@ -435,6 +509,8 @@
     </main>
 
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 
   <!-- =========================
@@ -474,13 +550,12 @@
 
         <div class="form-grid">
 
-          <label>
+          <label id="idField" class="hidden">
             ID
 
             <input
               id="f_id"
-              required
-              placeholder="ej. cold-matcha"
+              placeholder="se genera solo"
             />
 
           </label>
@@ -501,25 +576,7 @@
           <label>
             Categoría
 
-            <select id="f_category" required>
-
-              <option value="hot-drinks">
-                Bebidas calientes
-              </option>
-
-              <option value="cold-drinks">
-                Bebidas frías
-              </option>
-
-              <option value="frappes">
-                Frappes
-              </option>
-
-              <option value="lunch">
-                Lunch
-              </option>
-
-            </select>
+            <select id="f_category" required></select>
 
           </label>
 
@@ -553,6 +610,11 @@
 
 
         <label>
+          Foto del producto
+          <input id="f_imageFile" type="file" accept="image/*" />
+        </label>
+
+        <label>
           URL de imagen
 
           <input
@@ -561,6 +623,11 @@
             placeholder="https://... (opcional)"
           />
 
+        </label>
+
+        <label class="check">
+          <input id="f_available" type="checkbox" checked />
+          Disponible para pedir
         </label>
 
 
@@ -590,6 +657,39 @@
 
     </div>
 
+  </div>
+
+  <div id="categoryModal" class="modal hidden">
+    <div class="modal-card">
+      <button id="closeCategoryModal" class="close" type="button" aria-label="Cerrar">×</button>
+      <div class="modal-header">
+        <p class="eyebrow">MENÚ</p>
+        <h3 id="categoryModalTitle">Nueva categoría</h3>
+        <p class="modal-subtitle">Se verá en la app del alumno con su foto y color.</p>
+      </div>
+      <form id="categoryForm">
+        <label>Nombre
+          <input id="c_name" required placeholder="Ej. Postres" />
+        </label>
+        <label>Descripción
+          <textarea id="c_description" rows="2" placeholder="Texto corto bajo el título"></textarea>
+        </label>
+        <label>Color
+          <div class="color-row">
+            <input id="c_color" type="color" value="#57301c" />
+            <span>Color de la tarjeta en la app</span>
+          </div>
+        </label>
+        <label>Foto de la categoría
+          <input id="c_imageFile" type="file" accept="image/*" />
+        </label>
+        <div id="categoryFormError" class="form-error"></div>
+        <div class="form-actions">
+          <button type="button" id="cancelCategory" class="secondary">Cancelar</button>
+          <button type="submit" class="primary">Guardar</button>
+        </div>
+      </form>
+    </div>
   </div>
 
 

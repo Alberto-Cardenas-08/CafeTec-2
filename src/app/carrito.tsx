@@ -15,11 +15,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { CafeStatusBanner } from "@/components/cafe-status-banner";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useCafe } from "@/context/cafe-context";
 import { CART_LIMIT, parsePrice, useCart } from "@/context/cart-context";
 import { useOrders } from "@/context/orders-context";
 import { createOrder } from "@/services/orders";
+import { getProducts } from "@/services/products";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -32,7 +35,8 @@ export default function CartScreen() {
     removeProduct,
     clearCart,
   } = useCart();
-  const { lastCustomerName, rememberOrder } = useOrders();
+  const { lastCustomerName, rememberOrder, deviceId } = useOrders();
+  const { isOpen } = useCafe();
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const customerName = nameDraft ?? lastCustomerName;
   const [note, setNote] = useState("");
@@ -48,12 +52,31 @@ export default function CartScreen() {
       Alert.alert("Carrito vacío", "Agrega productos antes de pedir.");
       return;
     }
+    if (!isOpen) {
+      Alert.alert("Cafetería cerrada", "Puedes armar el carrito, pero ahora no se reciben pedidos.");
+      return;
+    }
 
     setSubmitting(true);
     try {
+      const catalog = await getProducts().catch(() => []);
+      const missing = items.filter((item) => {
+        const product = catalog.find((entry) => entry.id === item.id);
+        return !product || product.available === false;
+      });
+      if (missing.length > 0) {
+        Alert.alert(
+          "No se puede pedir",
+          "Uno de los productos de tu carrito ya no está disponible.",
+        );
+        setSubmitting(false);
+        return;
+      }
+
       const order = await createOrder({
         customerName: name,
         note: note.trim(),
+        deviceId,
         items: items.map((item) => ({
           productId: item.id,
           quantity: item.quantity,
@@ -77,7 +100,7 @@ export default function CartScreen() {
       Alert.alert(
         "No se pudo enviar",
         error instanceof Error
-          ? `${error.message}\n\nAsegúrate de tener la API encendida (npm run api).`
+          ? error.message
           : "Revisa la conexión con la API e inténtalo de nuevo.",
       );
     } finally {
@@ -103,6 +126,7 @@ export default function CartScreen() {
               <View style={styles.headerSpace} />
             </View>
 
+            <CafeStatusBanner />
             <ThemedText style={styles.limit}>
               {totalItems} {totalItems === 1 ? "producto" : "productos"}
               {totalItems > 0 ? ` · máximo ${CART_LIMIT}` : ""}
@@ -187,8 +211,8 @@ export default function CartScreen() {
 
                 <Pressable
                   onPress={placeOrder}
-                  disabled={submitting}
-                  style={[styles.orderButton, submitting && styles.disabled]}
+                  disabled={submitting || !isOpen}
+                  style={[styles.orderButton, (submitting || !isOpen) && styles.disabled]}
                 >
                   {submitting ? (
                     <ActivityIndicator color="#fffaf5" />
@@ -220,6 +244,7 @@ const styles = StyleSheet.create({
   title: { flex: 1, textAlign: "center", color: "#24150e", fontSize: 24, fontWeight: "700" },
   limit: { color: "#795e4d", fontSize: 16, marginBottom: 18 },
   empty: { color: "#795e4d", fontSize: 18, textAlign: "center", marginTop: 50 },
+  closed: { color: "#a33a2b", fontSize: 14, lineHeight: 20, marginBottom: 16 },
   item: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 16, padding: 12, marginBottom: 12 },
   image: { width: 70, height: 70 },
   itemInfo: { flex: 1, marginLeft: 10 },

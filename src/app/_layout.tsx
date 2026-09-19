@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { CafeProvider } from "@/context/cafe-context";
 import { CartProvider } from "@/context/cart-context";
 import { OrdersProvider } from "@/context/orders-context";
 
@@ -15,8 +16,10 @@ export default function TabLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <CartProvider>
         <OrdersProvider>
-          <AnimatedSplashOverlay />
-          <AppTabs />
+          <CafeProvider>
+            <AnimatedSplashOverlay />
+            <AppTabs />
+          </CafeProvider>
         </OrdersProvider>
       </CartProvider>
     </ThemeProvider>

@@ -4,7 +4,7 @@ import catalog from "@/data/products.json";
 import { getApiUrl } from "@/services/api";
 import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
-export type ProductCategory = "hot-drinks" | "cold-drinks" | "frappes" | "lunch";
+export type ProductCategory = string;
 
 export type Product = {
   id: string;
@@ -14,6 +14,7 @@ export type Product = {
   price: number;
   image: ImageSource;
   imageUrl?: string;
+  available: boolean;
 };
 
 type CatalogProduct = {
@@ -32,6 +33,7 @@ type ApiProduct = {
   description: string;
   price: number;
   imageUrl?: string;
+  available?: boolean;
 };
 
 type SupabaseProductRow = {
@@ -41,6 +43,7 @@ type SupabaseProductRow = {
   description: string;
   price: number | string;
   image_url: string | null;
+  available?: boolean | null;
 };
 
 const catalogProducts = catalog as CatalogProduct[];
@@ -52,6 +55,7 @@ export const localProducts: Product[] = catalogProducts.map((product) => ({
   description: product.description,
   price: product.price,
   image: getImage(product.imageFile),
+  available: true,
 }));
 
 function getImage(image: string): ImageSource {
@@ -86,11 +90,15 @@ function mapProduct(item: ApiProduct): Product {
     category: item.category as ProductCategory,
     price: Number(item.price),
     image: item.imageUrl ? { uri: item.imageUrl } : getFallbackImage(item.id),
+    available: item.available !== false,
   };
 }
 
 async function getProductsFromSupabase(category?: ProductCategory): Promise<Product[]> {
-  let query = getSupabase().from("products").select("id, category, name, description, price, image_url").order("name");
+  let query = getSupabase()
+    .from("products")
+    .select("id, category, name, description, price, image_url, available")
+    .order("name");
   if (category) query = query.eq("category", category);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
@@ -102,17 +110,19 @@ async function getProductsFromSupabase(category?: ProductCategory): Promise<Prod
       description: row.description,
       price: Number(row.price),
       imageUrl: row.image_url || undefined,
+      available: row.available !== false,
     }),
   );
 }
 
-export async function getProducts(category: ProductCategory): Promise<Product[]> {
+export async function getProducts(category?: ProductCategory): Promise<Product[]> {
   if (isSupabaseConfigured()) {
     return getProductsFromSupabase(category);
   }
 
   const apiUrl = getApiUrl();
-  const response = await fetch(`${apiUrl}/api/products?category=${category}`);
+  const query = category ? `?category=${encodeURIComponent(category)}` : "";
+  const response = await fetch(`${apiUrl}/api/products${query}`);
   if (!response.ok) {
     throw new Error(`La API respondió con el estado ${response.status}.`);
   }

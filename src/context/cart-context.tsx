@@ -15,6 +15,7 @@ export type CartProduct = {
   price: number | string;
   image: ImageSource;
   imageUrl?: string;
+  available?: boolean;
 };
 
 export type CartItem = CartProduct & {
@@ -119,6 +120,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     totalItems,
     totalPrice,
     addProduct: (product) => {
+      if (product.available === false) return false;
       let added = false;
       let remaining = 0;
       setItems((current) => {
