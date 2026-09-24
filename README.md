@@ -262,10 +262,6 @@ npx --yes serve -p 5500
 
 Abre [http://localhost:5500](http://localhost:5500), entra con el usuario de caja.
 
-Si no crea un nuevo database de supabase estan son las credenciales del administrador:
-
-- cafetec@admin.com / @cafetecadmin1314
-
 ### 3. Demo sugerida
 
 1. Abre la cafetería (franja verde en el panel).
