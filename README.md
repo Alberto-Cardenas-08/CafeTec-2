@@ -15,6 +15,7 @@ Tecnologías: Expo 57, React Native, TypeScript, Expo Router y Supabase (Postgre
 ## Qué hace
 
 ### App del alumno
+
 - Consulta el menú (categorías dinámicas, fotos, precio, disponible/agotado).
 - Carrito persistente, máximo **3 productos**.
 - Pedido con nombre y nota opcional.
@@ -26,6 +27,7 @@ Tecnologías: Expo 57, React Native, TypeScript, Expo Router y Supabase (Postgre
 - Cafetería abierta/cerrada visible en la app.
 
 ### Panel de caja (`admin-web/`)
+
 - Login con correo y contraseña (Supabase Auth).
 - Resumen del día: ventas, pedidos, gráfica, más vendidos, alertas de stock.
 - CRUD de productos (foto, stock, disponible/agotado).
@@ -48,13 +50,13 @@ CafeTec **no monta un Express propio en producción**. La API es la que genera *
 https://afqycxwuvzmksompycco.supabase.co
 ```
 
-| Pieza | URL |
-|---|---|
-| API REST | `https://afqycxwuvzmksompycco.supabase.co/rest/v1/` |
+| Pieza           | URL                                                     |
+| --------------- | ------------------------------------------------------- |
+| API REST        | `https://afqycxwuvzmksompycco.supabase.co/rest/v1/`     |
 | Funciones (RPC) | `https://afqycxwuvzmksompycco.supabase.co/rest/v1/rpc/` |
-| Auth | `https://afqycxwuvzmksompycco.supabase.co/auth/v1/` |
-| Storage (fotos) | `https://afqycxwuvzmksompycco.supabase.co/storage/v1/` |
-| Realtime | WebSocket del mismo proyecto |
+| Auth            | `https://afqycxwuvzmksompycco.supabase.co/auth/v1/`     |
+| Storage (fotos) | `https://afqycxwuvzmksompycco.supabase.co/storage/v1/`  |
+| Realtime        | WebSocket del mismo proyecto                            |
 
 Toda petición lleva la clave pública:
 
@@ -69,13 +71,13 @@ La app usa `@supabase/supabase-js` (`src/services/supabase.ts`). El panel usa el
 
 ### Tablas
 
-| Tabla | Quién la usa | Contenido |
-|---|---|---|
-| `products` | Alumno (lectura) y caja (CRUD) | id, categoría, nombre, descripción, precio, `image_url`, `available`, `stock` |
-| `categories` | Alumno (Home) y caja | id, nombre, descripción, color, foto, orden |
-| `orders` | Alumno crea/consulta; caja ve todas | id (`ord-0001`), fecha, nombre, nota, estado, total, `device_id`, avisos, `cancelled_at` |
-| `order_items` | Snapshot del pedido | producto, cantidad, precio del momento, importe |
-| `cafe_settings` | Ambos | `is_open` (abierta / cerrada) |
+| Tabla           | Quién la usa                        | Contenido                                                                                |
+| --------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `products`      | Alumno (lectura) y caja (CRUD)      | id, categoría, nombre, descripción, precio, `image_url`, `available`, `stock`            |
+| `categories`    | Alumno (Home) y caja                | id, nombre, descripción, color, foto, orden                                              |
+| `orders`        | Alumno crea/consulta; caja ve todas | id (`ord-0001`), fecha, nombre, nota, estado, total, `device_id`, avisos, `cancelled_at` |
+| `order_items`   | Snapshot del pedido                 | producto, cantidad, precio del momento, importe                                          |
+| `cafe_settings` | Ambos                               | `is_open` (abierta / cerrada)                                                            |
 
 Estados de un pedido: `recibido` (pendiente) → `en_preparacion` → `listo` → `entregado`, o `cancelado`.
 
@@ -112,11 +114,11 @@ POST   /storage/v1/object/product-images/...
 
 No se confía en el celular para precios ni límites. El servidor vuelve a validar.
 
-| Función | Quién | Qué hace |
-|---|---|---|
+| Función                | Quién  | Qué hace                                                                                                                                                                                                        |
+| ---------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `create_cafetec_order` | Alumno | Crea el pedido: cafetería abierta, máximo 3, producto existe y disponible, precio de la base, cooldown 2 h, penalización si canceló hace menos de 2 h. Guarda un **snapshot** (nombre y precio de ese momento). |
-| `cancel_cafetec_order` | Alumno | Cancela solo si está `recibido` y el `device_id` coincide. Deja `cancelled_at`. |
-| `remove_order_item` | Caja | Quita un producto agotado del pedido, recálcula total, avisa al alumno; si era el último, cancela la orden. |
+| `cancel_cafetec_order` | Alumno | Cancela solo si está `recibido` y el `device_id` coincide. Deja `cancelled_at`.                                                                                                                                 |
+| `remove_order_item`    | Caja   | Quita un producto agotado del pedido, recálcula total, avisa al alumno; si era el último, cancela la orden.                                                                                                     |
 
 Ejemplo de crear pedido:
 
@@ -136,13 +138,13 @@ Content-Type: application/json
 
 ### Seguridad (quién puede qué)
 
-| Acción | Anónimo (alumno) | Empleado logueado |
-|---|---|---|
-| Ver menú y categorías | Sí | Sí |
-| Crear / cancelar su pedido | Sí (RPC) | — |
-| Ver todos los pedidos | No hace falta; ve los de su `device_id` | Sí |
-| Cambiar estado, stock, fotos | No | Sí |
-| Abrir/cerrar cafetería | Solo leer | Sí |
+| Acción                       | Anónimo (alumno)                        | Empleado logueado |
+| ---------------------------- | --------------------------------------- | ----------------- |
+| Ver menú y categorías        | Sí                                      | Sí                |
+| Crear / cancelar su pedido   | Sí (RPC)                                | —                 |
+| Ver todos los pedidos        | No hace falta; ve los de su `device_id` | Sí                |
+| Cambiar estado, stock, fotos | No                                      | Sí                |
+| Abrir/cerrar cafetería       | Solo leer                               | Sí                |
 
 La clave `anon` / publishable **puede ir en la app**. La `service_role` no se usa en el celular ni en el panel.
 
@@ -201,15 +203,15 @@ Reinicia Expo cada vez que cambies el `.env`.
 
 En Supabase → **SQL Editor**, corre **cada archivo en una query nueva**, en este orden:
 
-| Orden | Archivo | Para qué |
-|---|---|---|
-| 1 | `supabase/schema.sql` | Tablas de productos y pedidos |
-| 2 | `supabase/mvp.sql` | Abierta/cerrada, cancelado, fotos, realtime |
-| 3 | `supabase/categories.sql` | Categorías dinámicas |
-| 4 | `supabase/order-rules.sql` | Cancelar pendiente |
-| 5 | `supabase/remove-item.sql` | Quitar producto agotado del pedido |
-| 6 | `supabase/stock.sql` | Inventario por unidades |
-| 7 | `supabase/enable-cooldowns.sql` | 2 h al pedir y 2 h al cancelar |
+| Orden | Archivo                         | Para qué                                    |
+| ----- | ------------------------------- | ------------------------------------------- |
+| 1     | `supabase/schema.sql`           | Tablas de productos y pedidos               |
+| 2     | `supabase/mvp.sql`              | Abierta/cerrada, cancelado, fotos, realtime |
+| 3     | `supabase/categories.sql`       | Categorías dinámicas                        |
+| 4     | `supabase/order-rules.sql`      | Cancelar pendiente                          |
+| 5     | `supabase/remove-item.sql`      | Quitar producto agotado del pedido          |
+| 6     | `supabase/stock.sql`            | Inventario por unidades                     |
+| 7     | `supabase/enable-cooldowns.sql` | 2 h al pedir y 2 h al cancelar              |
 
 Luego: **Authentication → Users → Add user** y crea el correo/contraseña de caja (ejemplo: `caja@cafetec.com`).
 
@@ -260,6 +262,10 @@ npx --yes serve -p 5500
 
 Abre [http://localhost:5500](http://localhost:5500), entra con el usuario de caja.
 
+Si no crea un nuevo database de supabase estan son las credenciales del administrador:
+
+- cafetec@admin.com / @cafetecadmin1314
+
 ### 3. Demo sugerida
 
 1. Abre la cafetería (franja verde en el panel).
@@ -283,17 +289,17 @@ npm run lint        # ESLint
 
 ## Estructura
 
-| Ruta | Qué es |
-|---|---|
-| `src/app/` | Pantallas: Home, categorías, carrito, pedidos |
-| `src/components/` | Menú, tabs, banner abierta/cerrada, ticket de estado |
-| `src/context/` | Carrito, pedidos, cafetería, red |
-| `src/services/` | Supabase, productos, pedidos, notificaciones |
-| `src/data/products.json` | Menú de respaldo |
-| `admin-web/` | Panel de caja (HTML + JS + CSS) |
-| `supabase/` | Scripts SQL |
-| `assets/images/` | Logo y fotos |
-| `server/` | API local antigua (opcional, no se usa en la entrega) |
+| Ruta                     | Qué es                                                |
+| ------------------------ | ----------------------------------------------------- |
+| `src/app/`               | Pantallas: Home, categorías, carrito, pedidos         |
+| `src/components/`        | Menú, tabs, banner abierta/cerrada, ticket de estado  |
+| `src/context/`           | Carrito, pedidos, cafetería, red                      |
+| `src/services/`          | Supabase, productos, pedidos, notificaciones          |
+| `src/data/products.json` | Menú de respaldo                                      |
+| `admin-web/`             | Panel de caja (HTML + JS + CSS)                       |
+| `supabase/`              | Scripts SQL                                           |
+| `assets/images/`         | Logo y fotos                                          |
+| `server/`                | API local antigua (opcional, no se usa en la entrega) |
 
 ### Flujo
 
