@@ -103,8 +103,8 @@ export function CategoryScreen({
                         }
                         if (!addProduct(product)) {
                           Alert.alert(
-                            "Pedido lleno",
-                            `Solo puedes agregar ${CART_LIMIT} productos por pedido.`,
+                            "Máximo 3 productos",
+                            "Solo puedes agregar 3 productos por pedido.",
                           );
                         }
                       }}

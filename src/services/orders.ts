@@ -11,12 +11,20 @@ export type OrderItemPayload = {
 };
 
 export type OrderLine = {
+  id?: number;
   productId: string;
   name: string;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
   imageUrl?: string;
+};
+
+export type OrderNotice = {
+  id: string;
+  type: string;
+  productName: string;
+  at: string;
 };
 
 export type Order = {
@@ -28,6 +36,8 @@ export type Order = {
   items: OrderLine[];
   total: number;
   deviceId?: string;
+  notices?: OrderNotice[];
+  cancelledAt?: string;
 };
 
 export const STATUS_STEPS: {
@@ -79,7 +89,10 @@ type OrderRow = {
   status: string;
   total: number | string;
   device_id?: string;
+  cancelled_at?: string | null;
+  notices?: unknown;
   order_items?: {
+    id?: number;
     product_id: string;
     name: string;
     quantity: number;
@@ -88,6 +101,21 @@ type OrderRow = {
     image_url?: string | null;
   }[];
 };
+
+function parseNotices(value: unknown): OrderNotice[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const item = entry as Record<string, unknown>;
+    if (typeof item.productName !== "string") return [];
+    return [{
+      id: typeof item.id === "string" ? item.id : `${item.productName}-${item.at ?? ""}`,
+      type: typeof item.type === "string" ? item.type : "agotado",
+      productName: item.productName,
+      at: typeof item.at === "string" ? item.at : "",
+    }];
+  });
+}
 
 function mapOrderRow(row: OrderRow): Order {
   return {
@@ -98,7 +126,10 @@ function mapOrderRow(row: OrderRow): Order {
     status: row.status as Order["status"],
     total: Number(row.total),
     deviceId: row.device_id,
+    cancelledAt: row.cancelled_at || undefined,
+    notices: parseNotices(row.notices),
     items: (row.order_items ?? []).map((item) => ({
+      id: item.id,
       productId: item.product_id,
       name: item.name,
       quantity: item.quantity,
@@ -151,7 +182,7 @@ export async function getOrder(id: string): Promise<Order> {
   if (isSupabaseConfigured()) {
     const { data, error } = await getSupabase()
       .from("orders")
-      .select("id, created_at, customer_name, note, status, total, device_id, order_items(product_id, name, quantity, unit_price, line_total, image_url)")
+      .select("id, created_at, customer_name, note, status, total, device_id, cancelled_at, notices, order_items(id, product_id, name, quantity, unit_price, line_total, image_url)")
       .eq("id", id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -178,7 +209,7 @@ export async function getOrdersByIds(ids: string[]): Promise<Order[]> {
   if (isSupabaseConfigured()) {
     const { data, error } = await getSupabase()
       .from("orders")
-      .select("id, created_at, customer_name, note, status, total, device_id, order_items(product_id, name, quantity, unit_price, line_total, image_url)")
+      .select("id, created_at, customer_name, note, status, total, device_id, cancelled_at, notices, order_items(id, product_id, name, quantity, unit_price, line_total, image_url)")
       .in("id", ids);
     if (error) throw new Error(error.message);
     return (data ?? []).map((row: OrderRow) => mapOrderRow(row));
@@ -196,11 +227,60 @@ export async function getOrdersByIds(ids: string[]): Promise<Order[]> {
   return payload.filter(isOrder);
 }
 
+export const ORDER_COOLDOWN_MS = 2 * 60 * 60 * 1000;
+
+export function getOrderCooldown(orders: Order[], deviceId: string) {
+  const last = orders
+    .filter((order) => order.status !== "cancelado" && (!deviceId || !order.deviceId || order.deviceId === deviceId))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  if (!last) return { blocked: false, remainingMs: 0, lastOrder: null as Order | null };
+  const remainingMs = new Date(last.createdAt).getTime() + ORDER_COOLDOWN_MS - Date.now();
+  return { blocked: remainingMs > 0, remainingMs: Math.max(0, remainingMs), lastOrder: last };
+}
+
+export function getCancelPenalty(orders: Order[], deviceId: string) {
+  const last = orders
+    .filter((order) => order.status === "cancelado" && (!deviceId || !order.deviceId || order.deviceId === deviceId))
+    .sort((a, b) => {
+      const aTime = a.cancelledAt || a.createdAt;
+      const bTime = b.cancelledAt || b.createdAt;
+      return bTime.localeCompare(aTime);
+    })[0];
+  if (!last) return { blocked: false, remainingMs: 0 };
+  const when = last.cancelledAt || last.createdAt;
+  const remainingMs = new Date(when).getTime() + ORDER_COOLDOWN_MS - Date.now();
+  return { blocked: remainingMs > 0, remainingMs: Math.max(0, remainingMs) };
+}
+
+export function formatCooldown(ms: number) {
+  const total = Math.max(1, Math.ceil(ms / 60000));
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  if (hours <= 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours} h`;
+  return `${hours} h ${minutes} min`;
+}
+
+export async function cancelOrder(id: string, deviceId: string): Promise<Order> {
+  if (isSupabaseConfigured()) {
+    const { data, error } = await getSupabase().rpc("cancel_cafetec_order", {
+      p_id: id,
+      p_device_id: deviceId,
+    });
+    if (error) throw new Error(error.message);
+    if (!isOrder(data)) {
+      return getOrder(id);
+    }
+    return { ...data, createdAt: String(data.createdAt), total: Number(data.total) };
+  }
+  throw new Error("No se puede cancelar sin conexión.");
+}
+
 export async function getOrdersByDeviceId(deviceId: string): Promise<Order[]> {
   if (!deviceId || !isSupabaseConfigured()) return [];
   const { data, error } = await getSupabase()
     .from("orders")
-    .select("id, created_at, customer_name, note, status, total, device_id, order_items(product_id, name, quantity, unit_price, line_total, image_url)")
+    .select("id, created_at, customer_name, note, status, total, device_id, notices, order_items(id, product_id, name, quantity, unit_price, line_total, image_url)")
     .eq("device_id", deviceId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);

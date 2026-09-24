@@ -10,6 +10,17 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useCart } from "@/context/cart-context";
 import { FALLBACK_CATEGORIES, getCategories, type MenuCategory } from "@/services/categories";
+
+const KNOWN_CATEGORY_ROUTES: Record<string, string> = {
+  "hot-drinks": "/bebidas-calientes",
+  "cold-drinks": "/bebidas-frias",
+  frappes: "/frappes",
+  lunch: "/lunch",
+};
+
+function categoryHref(id: string) {
+  return (KNOWN_CATEGORY_ROUTES[id] ?? `/categoria/${id}`) as never;
+}
 import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
 export default function HomeScreen() {
@@ -110,12 +121,10 @@ export default function HomeScreen() {
             {categories.map((category) => (
               <Pressable
                 key={category.id}
-                onPress={() => router.push({ pathname: "/categoria/[id]", params: { id: category.id } } as never)}
+                onPress={() => router.push(categoryHref(category.id))}
                 style={({ pressed }) => [
                   styles.category,
-                  {
-                    backgroundColor: category.color,
-                  },
+                  { backgroundColor: category.color || "#57301c" },
                   pressed && styles.pressed,
                 ]}
               >
@@ -123,27 +132,24 @@ export default function HomeScreen() {
                   source={category.image}
                   style={styles.categoryImage}
                   contentFit="contain"
+                  pointerEvents="none"
                 />
 
-                <View style={styles.categoryIcon}>
+                <View style={styles.categoryIcon} pointerEvents="none">
                   <Ionicons name="cafe-outline" size={32} color="#fffaf5" />
                 </View>
 
-                <View style={styles.categoryCopy}>
+                <View style={styles.categoryCopy} pointerEvents="none">
                   <ThemedText style={styles.categoryTitle}>
                     {category.name}
                   </ThemedText>
                 </View>
 
-                {/* =========================
-                    FLECHA
-                    ========================= */}
-
-                <View style={styles.arrowContainer}>
+                <View style={styles.arrowContainer} pointerEvents="none">
                   <Ionicons
                     name="chevron-forward"
                     size={28}
-                    color={category.color}
+                    color={category.color || "#57301c"}
                   />
                 </View>
               </Pressable>
@@ -284,6 +290,7 @@ const styles = StyleSheet.create({
 
   category: {
     width: "100%",
+    minHeight: 110,
     height: 110,
 
     borderRadius: 18,
@@ -292,6 +299,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
 
     overflow: "hidden",
+    cursor: "pointer",
 
     shadowColor: "#000",
     shadowOpacity: 0.1,

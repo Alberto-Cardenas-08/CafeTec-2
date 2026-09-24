@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AppState } from "react-native";
+import { Alert, AppState } from "react-native";
 
 import { getDeviceId } from "@/services/device";
-import { getOrdersByDeviceId, getOrdersByIds, isOrder, type Order } from "@/services/orders";
+import { notifyOrderStatus } from "@/services/notifications";
+import { getOrdersByDeviceId, getOrdersByIds, isOrder, type Order, type OrderStatus } from "@/services/orders";
 import { getSupabase, isSupabaseConfigured } from "@/services/supabase";
 
 type OrdersContextValue = {
@@ -18,6 +19,7 @@ type OrdersContextValue = {
 const OrdersContext = createContext<OrdersContextValue | null>(null);
 const ORDERS_STORAGE_KEY = "cafetec-my-orders";
 const NAME_STORAGE_KEY = "cafetec-customer-name";
+const SEEN_NOTICES_KEY = "cafetec-seen-notices";
 
 export function OrdersProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -25,6 +27,9 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   const [lastCustomerName, setLastCustomerNameState] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
   const ordersRef = useRef<Order[]>([]);
+  const seenNotices = useRef(new Set<string>());
+  const lastStatus = useRef<Record<string, OrderStatus>>({});
+  const statusHydrated = useRef(false);
 
   useEffect(() => {
     ordersRef.current = orders;
@@ -34,9 +39,10 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     Promise.all([
       AsyncStorage.getItem(ORDERS_STORAGE_KEY),
       AsyncStorage.getItem(NAME_STORAGE_KEY),
+      AsyncStorage.getItem(SEEN_NOTICES_KEY),
       getDeviceId(),
     ])
-      .then(([storedOrders, storedName, id]) => {
+      .then(([storedOrders, storedName, storedSeen, id]) => {
         setDeviceId(id);
         if (storedOrders) {
           try {
@@ -50,6 +56,14 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         }
         if (typeof storedName === "string" && storedName.trim()) {
           setLastCustomerNameState(storedName.trim());
+        }
+        if (storedSeen) {
+          try {
+            const parsed: unknown = JSON.parse(storedSeen);
+            if (Array.isArray(parsed)) parsed.forEach((key) => seenNotices.current.add(String(key)));
+          } catch {
+            seenNotices.current = new Set();
+          }
         }
         setIsLoaded(true);
       })
@@ -89,6 +103,44 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     if (merged.size === 0) return;
     setOrders(Array.from(merged.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
   }, [deviceId]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    const fresh: string[] = [];
+    const messages: string[] = [];
+    for (const order of orders) {
+      for (const notice of order.notices ?? []) {
+        const key = notice.id || `${order.id}-${notice.productName}-${notice.at}`;
+        if (seenNotices.current.has(key)) continue;
+        seenNotices.current.add(key);
+        fresh.push(key);
+        const name = notice.productName;
+        messages.push(
+          notice.type === "agotado_cancelado"
+            ? `${name} se agotó. Como era lo último de tu pedido ${order.id}, se canceló la orden.`
+            : `${name} se agotó. El resto de tu pedido ${order.id} sigue en caja.`,
+        );
+      }
+    }
+    if (fresh.length) {
+      AsyncStorage.setItem(SEEN_NOTICES_KEY, JSON.stringify([...seenNotices.current])).catch(() => undefined);
+      Alert.alert("Se agotó un producto", messages.join("\n\n"));
+    }
+
+    if (!statusHydrated.current) {
+      for (const order of orders) lastStatus.current[order.id] = order.status;
+      statusHydrated.current = true;
+      return;
+    }
+    for (const order of orders) {
+      const previous = lastStatus.current[order.id];
+      lastStatus.current[order.id] = order.status;
+      if (!previous || previous === order.status || order.status === "recibido") continue;
+      void notifyOrderStatus(order.status, order.id).then((notice) => {
+        Alert.alert(notice.title, notice.body);
+      });
+    }
+  }, [isLoaded, orders]);
 
   useEffect(() => {
     if (!isSupabaseConfigured() || !isLoaded) return undefined;

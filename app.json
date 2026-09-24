@@ -38,7 +38,15 @@
           "imageWidth": 76
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#57301c",
+          "sounds": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

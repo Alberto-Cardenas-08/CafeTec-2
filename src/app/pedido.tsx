@@ -2,14 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OrderStatusTrack } from "@/components/order-status-track";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useOrders } from "@/context/orders-context";
-import { getOrder, statusLabel } from "@/services/orders";
+import { cancelOrder, getOrder, statusLabel } from "@/services/orders";
 import { getProductImage } from "@/services/products";
 
 function formatWhen(iso: string) {
@@ -20,7 +20,8 @@ function formatWhen(iso: string) {
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { orders, rememberOrder } = useOrders();
+  const { orders, rememberOrder, deviceId } = useOrders();
+  const [cancelling, setCancelling] = useState(false);
   const cached = orders.find((order) => order.id === id);
   const [order, setOrder] = useState(cached);
   const live = orders.find((item) => item.id === id) ?? order;
@@ -112,8 +113,51 @@ export default function OrderDetailScreen() {
                 <ThemedText style={styles.totalValue}>${live.total}</ThemedText>
               </View>
 
+              {live.status === "recibido" ? (
+                <Pressable
+                  disabled={cancelling}
+                  onPress={() => {
+                    Alert.alert(
+                      "Cancelar pedido",
+                      "¿Seguro? Si cancelas, este celular no podrá pedir de nuevo hasta dentro de 2 horas.",
+                      [
+                        { text: "No" },
+                        {
+                          text: "Sí, cancelar",
+                          style: "destructive",
+                          onPress: async () => {
+                            setCancelling(true);
+                            try {
+                              const updated = await cancelOrder(live.id, deviceId);
+                              rememberOrder(updated);
+                              setOrder(updated);
+                              Alert.alert(
+                                "Pedido cancelado",
+                                "Caja ya no lo va a preparar. Por 2 horas no podrás hacer otro pedido desde este celular.",
+                              );
+                            } catch (reason: unknown) {
+                              Alert.alert(
+                                "No se pudo cancelar",
+                                reason instanceof Error ? reason.message : "Inténtalo de nuevo.",
+                              );
+                            } finally {
+                              setCancelling(false);
+                            }
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                  style={styles.cancelButton}
+                >
+                  <ThemedText style={styles.cancelText}>
+                    {cancelling ? "Cancelando…" : "Cancelar pedido"}
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+
               <ThemedText style={styles.footnote}>
-                El personal de CafeTec irá moviendo el estado. Aquí solo lo consultas.
+                Puedes cancelar solo mientras está pendiente. Cancelar bloquea este celular 2 horas.
               </ThemedText>
             </>
           ) : null}
@@ -162,4 +206,12 @@ const styles = StyleSheet.create({
   totalLabel: { color: "#24150e", fontSize: 18, fontWeight: "700" },
   totalValue: { color: "#57301c", fontSize: 22, fontWeight: "700" },
   footnote: { color: "#795e4d", fontSize: 13, lineHeight: 19, marginTop: 16, textAlign: "center" },
+  cancelButton: {
+    marginTop: 16,
+    backgroundColor: "#a33a2b",
+    borderRadius: 12,
+    padding: 14,
+    alignItems: "center",
+  },
+  cancelText: { color: "#fffaf5", fontWeight: "700", fontSize: 16 },
 });

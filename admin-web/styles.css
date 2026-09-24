@@ -136,6 +136,27 @@ body {
   padding: 5px;
 }
 
+.brand-logo-full {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #f7f1e6;
+}
+
+.brand-logo-full img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 28px;
+}
+
 .brand-fallback {
   display: none;
 
@@ -1214,6 +1235,20 @@ body {
   font-size: 10px;
   font-weight: 800;
 }
+.cat-bubble.sold {
+  background: #f8e8e4;
+  color: #a33a2b;
+}
+.line-remove {
+  border: 0;
+  background: #f8e8e4;
+  color: #a33a2b;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
 
 .order-note {
   color: #795e4d;
@@ -1263,6 +1298,10 @@ body {
 
 .status-bubble.status-cancelado.is-active {
   background: #a33a2b;
+}
+.status-bubble.is-locked {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .status-bubble[data-filter="all"].is-active {
   background: #24150e;
@@ -1854,6 +1893,260 @@ body {
 }
 .cafe-banner.is-closed .cafe-dot {
   background: #a33a2b;
+}
+.dashboard-insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.9fr);
+  gap: 16px;
+  margin: 0 0 16px;
+}
+.daily-summary-card,
+.best-sellers-card,
+.stock-alerts-card {
+  min-width: 0;
+}
+.dashboard-date {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--brown);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+.daily-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.mini-kpi {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fffaf5;
+}
+.mini-kpi span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+.mini-kpi strong {
+  display: block;
+  color: var(--ink);
+  font-size: 17px;
+  letter-spacing: -0.3px;
+}
+.sales-chart-wrap {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.chart-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+.sales-chart {
+  min-height: 190px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(45px, 1fr));
+  gap: 10px;
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 4px 0;
+}
+.chart-column {
+  height: 165px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.chart-value {
+  color: var(--brown);
+  font-size: 8px;
+  font-weight: 800;
+  margin-bottom: 5px;
+  white-space: nowrap;
+}
+.chart-bar-track {
+  width: min(34px, 75%);
+  height: 105px;
+  display: flex;
+  align-items: flex-end;
+  background: #f5eee5;
+  border-radius: 8px 8px 4px 4px;
+  overflow: hidden;
+}
+.chart-bar {
+  width: 100%;
+  min-height: 4px;
+  background: linear-gradient(180deg, var(--orange-light), var(--brown));
+  border-radius: 8px 8px 3px 3px;
+}
+.chart-column > span {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+.best-sellers-list {
+  display: grid;
+  gap: 9px;
+}
+.best-seller-row {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.best-seller-row:last-child {
+  border-bottom: 0;
+}
+.best-rank {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--brown);
+  font-size: 10px;
+  font-weight: 900;
+}
+.best-seller-info {
+  min-width: 0;
+}
+.best-seller-info strong,
+.best-seller-info small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.best-seller-info strong {
+  font-size: 11px;
+}
+.best-seller-info small {
+  color: var(--muted);
+  font-size: 9px;
+  margin-top: 3px;
+}
+.best-seller-money {
+  color: var(--brown);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.stock-alerts-card {
+  margin-bottom: 16px;
+}
+.stock-alerts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.stock-alert {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 13px;
+  border: 1px solid var(--line);
+}
+.stock-alert.is-out {
+  background: #fff3f1;
+  border-color: #edc8c2;
+}
+.stock-alert.is-low {
+  background: #fff8ec;
+  border-color: #efd5ad;
+}
+.dashboard-empty {
+  grid-column: 1 / -1;
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.stock-text.low {
+  color: #b26a1b;
+}
+.stock-alert-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--brown);
+  font-weight: 900;
+}
+.stock-alert-info strong,
+.stock-alert-info span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stock-alert-info strong {
+  font-size: 11px;
+}
+.stock-alert-info span {
+  color: var(--muted);
+  font-size: 9px;
+  margin-top: 3px;
+}
+.stock-alert-badge {
+  padding: 5px 7px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--brown);
+  font-size: 8px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.stock-ok {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border-radius: 13px;
+  background: var(--green-light);
+  border: 1px solid #cdebd7;
+  color: #2f7d4a;
+}
+.stock-ok > span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #fff;
+  font-weight: 900;
+}
+@media (max-width: 1100px) {
+  .dashboard-insights {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .daily-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stock-alerts {
+    grid-template-columns: 1fr;
+  }
 }
 .tickets-layout {
   display: grid;

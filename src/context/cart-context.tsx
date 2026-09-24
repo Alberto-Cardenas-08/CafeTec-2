@@ -122,12 +122,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     addProduct: (product) => {
       if (product.available === false) return false;
       let added = false;
-      let remaining = 0;
       setItems((current) => {
         const total = quantityOf(current);
         if (total >= CART_LIMIT) return current;
         added = true;
-        remaining = CART_LIMIT - (total + 1);
         const existing = current.find((item) => item.id === product.id);
         if (existing) {
           return current.map((item) =>
@@ -137,11 +135,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return [...current, { ...product, quantity: 1 }];
       });
       if (added) {
-        showNotification(
-          remaining > 0
-            ? `Agregaste ${product.name}.`
-            : `Agregaste ${product.name}. Llegaste al máximo del pedido.`,
-        );
+        showNotification(`Agregaste ${product.name}.`);
       }
       return added;
     },

@@ -99,10 +99,12 @@ function mapProduct(p) {
     price: Number(p.price),
     imageUrl: p.image_url || p.imageUrl,
     available: p.available !== false,
+    stock: p.stock == null ? 0 : Math.max(0, Number(p.stock)),
   };
 }
 function mapOrder(o) {
   const items = (o.order_items || o.items || []).map((i) => ({
+    id: i.id,
     productId: i.product_id || i.productId,
     name: i.name,
     quantity: i.quantity,
@@ -180,6 +182,7 @@ async function load() {
     renderCorte();
     renderTickets();
     renderStats();
+    renderDashboardInsights();
   } catch (e) {
     setConnection(false, "Sin conexión");
     $("productsGrid").innerHTML =
@@ -215,6 +218,74 @@ function renderStats() {
   $("statOrders").textContent = state.orders.length || "0";
   $("statSales").textContent = money(state.orders.reduce((s, o) => s + Number(o.total || 0), 0));
 }
+function renderDashboardInsights() {
+  const today = todayKey();
+  const sold = ordersInRange(today, today, false);
+  const total = sold.reduce((s, o) => s + Number(o.total || 0), 0);
+  const avg = sold.length ? total / sold.length : 0;
+  const slots = [
+    { label: "7-9", hours: [7, 8, 9] },
+    { label: "10-12", hours: [10, 11, 12] },
+    { label: "13-15", hours: [13, 14, 15] },
+    { label: "16-18", hours: [16, 17, 18] },
+    { label: "19-21", hours: [19, 20, 21] },
+    { label: "22+", hours: [22, 23, 0, 1, 2, 3, 4, 5, 6] },
+  ];
+  const slotTotals = slots.map((slot) => {
+    const value = sold.reduce((sum, order) => {
+      const hour = new Date(order.createdAt).getHours();
+      return slot.hours.includes(hour) ? sum + Number(order.total || 0) : sum;
+    }, 0);
+    return { ...slot, value };
+  });
+  const peakSlot = [...slotTotals].sort((a, b) => b.value - a.value)[0];
+  const peakLabel = peakSlot && peakSlot.value > 0 ? peakSlot.label : "—";
+  const maxHour = Math.max(...slotTotals.map((s) => s.value), 1);
+  if ($("dashboardDate")) {
+    $("dashboardDate").textContent = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+  }
+  if ($("dailySales")) $("dailySales").textContent = money(total);
+  if ($("dailyOrders")) $("dailyOrders").textContent = String(sold.length);
+  if ($("dailyAverage")) $("dailyAverage").textContent = money(avg);
+  if ($("dailyPeak")) $("dailyPeak").textContent = peakLabel;
+  if ($("dailySalesChart")) {
+    $("dailySalesChart").innerHTML = total
+      ? slotTotals
+          .map((slot) => {
+            const height = Math.max(8, Math.round((slot.value / maxHour) * 100));
+            return `<div class="chart-column"><span class="chart-value">${slot.value ? money(slot.value) : ""}</span><div class="chart-bar-track"><div class="chart-bar" style="height:${height}%"></div></div><span>${slot.label}</span></div>`;
+          })
+          .join("")
+      : '<div class="dashboard-empty">Todavía no hay ventas registradas hoy.</div>';
+  }
+  const soldMap = {};
+  for (const order of sold) {
+    for (const item of order.items || []) {
+      if (!soldMap[item.name]) soldMap[item.name] = { name: item.name, quantity: 0, total: 0 };
+      soldMap[item.name].quantity += Number(item.quantity || 0);
+      soldMap[item.name].total += Number(item.lineTotal || 0);
+    }
+  }
+  const top = Object.values(soldMap).sort((a, b) => b.quantity - a.quantity).slice(0, 5);
+  if ($("bestSellersList")) {
+    $("bestSellersList").innerHTML = top.length
+      ? top.map((item, i) => `<div class="best-seller-row"><span class="best-rank">${i + 1}</span><div class="best-seller-info"><strong>${esc(item.name)}</strong><small>${item.quantity} piezas</small></div><span class="best-seller-money">${money(item.total)}</span></div>`).join("")
+      : '<div class="dashboard-empty">Aún no hay productos vendidos hoy.</div>';
+  }
+  const alerts = state.products.filter((p) => p.available === false || p.stock <= 3);
+  if ($("stockAlerts")) {
+    $("stockAlerts").innerHTML = alerts.length
+      ? alerts
+          .sort((a, b) => a.stock - b.stock)
+          .slice(0, 8)
+          .map((p) => {
+            const soldOut = p.stock <= 0 || p.available === false;
+            return `<div class="stock-alert ${soldOut ? "is-out" : "is-low"}"><div class="stock-alert-icon">${soldOut ? "!" : "⌁"}</div><div class="stock-alert-info"><strong>${esc(p.name)}</strong><span>${soldOut ? "Producto agotado" : `Quedan ${p.stock} ${p.stock === 1 ? "unidad" : "unidades"}`}</span></div><span class="stock-alert-badge">${soldOut ? "AGOTADO" : "STOCK BAJO"}</span></div>`;
+          })
+          .join("")
+      : '<div class="stock-ok"><span>✓</span><div><strong>Inventario en orden</strong><small>No hay productos agotados ni con stock bajo.</small></div></div>';
+  }
+}
 function renderProducts() {
   const q = $("search").value.toLowerCase();
   const c = $("categoryFilter").value;
@@ -226,7 +297,7 @@ function renderProducts() {
     ? list
         .map(
           (p) =>
-            `<article class="product-card ${p.available ? "" : "is-soldout"}"><div class="product-image">${p.imageUrl ? `<img src="${escapeAttr(p.imageUrl)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">` : ""}<span class="product-placeholder" ${p.imageUrl ? 'style="display:none"' : ""}>☕</span></div><div class="product-body"><h4>${esc(p.name)}</h4><p>${esc(p.description)}</p><div class="product-meta"><span class="price">${money(p.price)}</span><span class="badge">${esc(categoryLabel(p.category))}</span></div><div class="stock-row"><button type="button" class="stock-switch ${p.available ? "on" : ""}" onclick="toggleAvailable('${escAttr(p.id)}')"><span class="knob"></span></button><span class="stock-text ${p.available ? "ok" : "off"}">${p.available ? "Disponible" : "Agotado"}</span></div><div class="product-actions"><button onclick="editProduct('${escAttr(p.id)}')">✏️ Editar</button><button class="danger" onclick="removeProduct('${escAttr(p.id)}')">Agotar</button></div></div></article>`,
+            `<article class="product-card ${p.available && p.stock > 0 ? "" : "is-soldout"}"><div class="product-image">${p.imageUrl ? `<img src="${escapeAttr(p.imageUrl)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">` : ""}<span class="product-placeholder" ${p.imageUrl ? 'style="display:none"' : ""}>☕</span></div><div class="product-body"><h4>${esc(p.name)}</h4><p>${esc(p.description)}</p><div class="product-meta"><span class="price">${money(p.price)}</span><span class="badge">${esc(categoryLabel(p.category))}</span></div><div class="stock-row"><button type="button" class="stock-switch ${p.available && p.stock > 0 ? "on" : ""}" onclick="toggleAvailable('${escAttr(p.id)}')"><span class="knob"></span></button><span class="stock-text ${p.stock <= 0 || !p.available ? "off" : p.stock <= 3 ? "low" : "ok"}">${p.stock <= 0 || !p.available ? "Agotado" : p.stock <= 3 ? `Stock bajo · ${p.stock}` : `Disponible · ${p.stock}`}</span></div><div class="product-actions"><button onclick="editProduct('${escAttr(p.id)}')">✏️ Editar</button><button class="danger" onclick="removeProduct('${escAttr(p.id)}')">Agotar</button></div></div></article>`,
         )
         .join("")
     : '<div class="empty">No hay productos con esos filtros.</div>';
@@ -241,15 +312,21 @@ const ORDER_STATUS_BUBBLES = [
 function statusBubbles(orderId, current) {
   return `<div class="status-bubbles">${ORDER_STATUS_BUBBLES.map(
     (s) =>
-      `<button type="button" class="status-bubble status-${s.id}${current === s.id ? " is-active" : ""}" onclick="setOrderStatus('${escAttr(orderId)}','${s.id}')">${s.label}</button>`,
+      `<button type="button" class="status-bubble status-${s.id}${current === s.id ? " is-active" : ""}${s.id === "recibido" && current !== "recibido" ? " is-locked" : ""}" onclick="setOrderStatus('${escAttr(orderId)}','${s.id}')">${s.label}</button>`,
   ).join("")}</div>`;
 }
-function orderItemLine(item) {
+function orderItemLine(order, item) {
   const product = state.products.find((p) => p.id === item.productId);
   const catId = product?.category;
   const catName = catId ? categoryLabel(catId) : "";
+  const soldOut = product && product.available === false;
+  const canRemove = item.id && order.status !== "entregado" && order.status !== "cancelado";
   return `<div class="order-line"><span>${esc(item.name)} × ${item.quantity}</span>${
     catName ? `<span class="cat-bubble">${esc(catName)}</span>` : ""
+  }${soldOut ? `<span class="cat-bubble sold">Agotado</span>` : ""}${
+    canRemove
+      ? `<button type="button" class="line-remove" onclick="removeOrderItem('${escAttr(order.id)}', ${Number(item.id)}, '${escAttr(item.name)}')">Quitar</button>`
+      : ""
   }</div>`;
 }
 function renderOrders() {
@@ -261,7 +338,7 @@ function renderOrders() {
     ? list
         .map(
           (o) =>
-            `<article class="order"><div class="order-top"><strong>${esc(o.id)}${o.customerName ? " · " + esc(o.customerName) : ""}</strong><span>${new Date(o.createdAt).toLocaleString("es-MX")}</span></div><div class="order-items">${(o.items || []).map(orderItemLine).join("")}${o.note ? `<div class="order-note">Nota: ${esc(o.note)}</div>` : ""}</div>${statusBubbles(o.id, o.status)}<div class="order-bottom"><button type="button" class="secondary" onclick="openTicket('${escAttr(o.id)}')">Ticket</button><span>${money(o.total)}</span></div></article>`,
+            `<article class="order"><div class="order-top"><strong>${esc(o.id)}${o.customerName ? " · " + esc(o.customerName) : ""}</strong><span>${new Date(o.createdAt).toLocaleString("es-MX")}</span></div><div class="order-items">${(o.items || []).map((item) => orderItemLine(o, item)).join("")}${o.note ? `<div class="order-note">Nota: ${esc(o.note)}</div>` : ""}</div>${statusBubbles(o.id, o.status)}<div class="order-bottom"><button type="button" class="secondary" onclick="openTicket('${escAttr(o.id)}')">Ticket</button><span>${money(o.total)}</span></div></article>`,
         )
         .join("")
     : '<div class="empty">No hay pedidos en este día / filtro.</div>';
@@ -641,6 +718,7 @@ function openModal(p = null) {
   $("f_category").value = p?.category || "hot-drinks";
   $("f_price").value = p?.price ?? "";
   $("f_description").value = p?.description || "";
+  if ($("f_stock")) $("f_stock").value = p?.stock ?? 10;
   $("f_imageUrl").value = p?.imageUrl || "";
   $("f_imageFile").value = "";
   $("f_available").checked = p ? p.available !== false : true;
@@ -672,8 +750,9 @@ async function saveProduct(ev) {
       name,
       description: $("f_description").value.trim(),
       price: Number($("f_price").value),
+      stock: Math.max(0, Math.floor(Number($("f_stock")?.value || 0))),
       image_url: imageUrl || null,
-      available: $("f_available").checked,
+      available: $("f_available").checked && Math.max(0, Math.floor(Number($("f_stock")?.value || 0))) > 0,
     };
     if (state.editingId) {
       const { id, ...patch } = row;
@@ -694,6 +773,10 @@ async function saveProduct(ev) {
 window.toggleAvailable = async (id) => {
   const p = state.products.find((x) => x.id === id);
   if (!p) return;
+  if (!p.available && p.stock <= 0) {
+    toast("Primero agrega stock para volver a activar este producto");
+    return;
+  }
   try {
     const { error } = await state.client.from("products").update({ available: !p.available }).eq("id", id);
     if (error) throw error;
@@ -792,8 +875,33 @@ window.removeProduct = async (id) => {
     toast(e.message);
   }
 };
+window.removeOrderItem = async (orderId, itemId, name) => {
+  const order = state.orders.find((o) => o.id === orderId);
+  const last = (order?.items || []).length <= 1;
+  const ok = confirm(
+    last
+      ? `¿Quitar “${name}”? Es el último producto y el pedido se cancelará.\nEl cliente recibirá un aviso de que se agotó.`
+      : `¿Quitar “${name}” del pedido porque se agotó?\nEl resto sigue. El cliente recibirá un aviso.`,
+  );
+  if (!ok) return;
+  try {
+    const { error } = await state.client.rpc("remove_order_item", {
+      p_order_id: orderId,
+      p_item_id: itemId,
+    });
+    if (error) throw error;
+    toast(`${name} se quitó del pedido. El cliente ya fue avisado.`);
+    await load();
+  } catch (e) {
+    toast(e.message);
+  }
+};
 window.setOrderStatus = async (id, status) => {
   const current = state.orders.find((o) => o.id === id);
+  if (current && current.status !== "recibido" && status === "recibido") {
+    toast("Ya está en preparación. No se puede volver a pendiente.");
+    return;
+  }
   if (status === "cancelado" && current?.status !== "cancelado") {
     const ok = confirm(`¿Seguro que quieres cancelar la orden ${id}?\nYa no contará en el corte del día.`);
     if (!ok) return;
@@ -941,6 +1049,9 @@ $("logout").onclick = async () => {
 $("cafeToggle").onclick = async () => {
   try {
     const next = !state.isOpen;
+    if (!next && !confirm("¿Cerrar la cafetería?\nLos alumnos verán el menú, pero no podrán pedir.")) {
+      return;
+    }
     const { error } = await state.client.from("cafe_settings").update({ is_open: next }).eq("id", 1);
     if (error) throw error;
     state.isOpen = next;

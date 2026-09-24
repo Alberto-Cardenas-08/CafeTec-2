@@ -31,22 +31,14 @@
     <aside class="sidebar">
 
       <div class="brand">
-
-        <div class="brand-logo">
+        <div class="brand-logo-full">
           <img
-            src="../assets/cafetec-logo.png"
-            alt="CafeTec"
+            src="../assets/images/logo-cafetec.png"
+            alt="CAFETEC"
             onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';"
           />
-
           <div class="brand-fallback">☕</div>
         </div>
-
-        <div class="brand-info">
-          <strong>CAFETEC</strong>
-          <span>Café de especialidad & tecnología</span>
-        </div>
-
       </div>
 
 
@@ -264,6 +256,64 @@
           </article>
 
         </div>
+
+
+        <div class="dashboard-insights">
+          <section class="section-card daily-summary-card">
+            <div class="section-head">
+              <div>
+                <h3>Resumen del día</h3>
+                <p id="dailySummarySubtitle">Ventas y pedidos de hoy.</p>
+              </div>
+              <span class="dashboard-date" id="dashboardDate">Hoy</span>
+            </div>
+            <div class="daily-kpis">
+              <div class="mini-kpi">
+                <span>Ventas de hoy</span>
+                <strong id="dailySales">$0.00</strong>
+              </div>
+              <div class="mini-kpi">
+                <span>Pedidos de hoy</span>
+                <strong id="dailyOrders">0</strong>
+              </div>
+              <div class="mini-kpi">
+                <span>Ticket promedio</span>
+                <strong id="dailyAverage">$0.00</strong>
+              </div>
+              <div class="mini-kpi">
+                <span>Hora más fuerte</span>
+                <strong id="dailyPeak">—</strong>
+              </div>
+            </div>
+            <div class="sales-chart-wrap">
+              <div class="chart-title-row">
+                <span>Ventas por horario</span>
+                <span id="chartHint">Hoy</span>
+              </div>
+              <div id="dailySalesChart" class="sales-chart" aria-label="Gráfica de ventas del día"></div>
+            </div>
+          </section>
+          <section class="section-card best-sellers-card">
+            <div class="section-head">
+              <div>
+                <h3>Productos más vendidos</h3>
+                <p>Basado en los pedidos no cancelados de hoy.</p>
+              </div>
+            </div>
+            <div id="bestSellersList" class="best-sellers-list"></div>
+          </section>
+        </div>
+
+        <section class="section-card stock-alerts-card">
+          <div class="section-head">
+            <div>
+              <h3>Alertas de inventario</h3>
+              <p>Productos marcados como agotados. El cliente no puede pedirlos.</p>
+            </div>
+            <button type="button" class="secondary" data-view="products">Administrar productos</button>
+          </div>
+          <div id="stockAlerts" class="stock-alerts"></div>
+        </section>
 
 
         <!-- Acciones rápidas -->
@@ -606,6 +656,12 @@
             required
           ></textarea>
 
+        </label>
+
+        <label>
+          Stock disponible
+          <input id="f_stock" type="number" min="0" step="1" value="10" required />
+          <small class="field-help">Usa 0 cuando esté agotado. La alerta de stock bajo aparece con 3 unidades o menos.</small>
         </label>
 
 

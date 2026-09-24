@@ -21,7 +21,7 @@ import { ThemedView } from "@/components/themed-view";
 import { useCafe } from "@/context/cafe-context";
 import { CART_LIMIT, parsePrice, useCart } from "@/context/cart-context";
 import { useOrders } from "@/context/orders-context";
-import { createOrder } from "@/services/orders";
+import { createOrder, formatCooldown, getCancelPenalty, getOrderCooldown } from "@/services/orders";
 import { getProducts } from "@/services/products";
 
 export default function CartScreen() {
@@ -35,8 +35,10 @@ export default function CartScreen() {
     removeProduct,
     clearCart,
   } = useCart();
-  const { lastCustomerName, rememberOrder, deviceId } = useOrders();
+  const { lastCustomerName, rememberOrder, deviceId, orders } = useOrders();
   const { isOpen } = useCafe();
+  const cooldown = getOrderCooldown(orders, deviceId);
+  const cancelPenalty = getCancelPenalty(orders, deviceId);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const customerName = nameDraft ?? lastCustomerName;
   const [note, setNote] = useState("");
@@ -54,6 +56,20 @@ export default function CartScreen() {
     }
     if (!isOpen) {
       Alert.alert("Cafetería cerrada", "Puedes armar el carrito, pero ahora no se reciben pedidos.");
+      return;
+    }
+    if (cooldown.blocked) {
+      Alert.alert(
+        "Espera un poco",
+        `Este dispositivo ya hizo un pedido. Podrás pedir de nuevo en ${formatCooldown(cooldown.remainingMs)}.`,
+      );
+      return;
+    }
+    if (cancelPenalty.blocked) {
+      Alert.alert(
+        "Penalización por cancelar",
+        `Cancelaste un pedido. Podrás volver a pedir en ${formatCooldown(cancelPenalty.remainingMs)}.`,
+      );
       return;
     }
 
@@ -127,6 +143,16 @@ export default function CartScreen() {
             </View>
 
             <CafeStatusBanner />
+            {cooldown.blocked ? (
+              <ThemedText style={styles.cooldown}>
+                Este dispositivo ya pidió. Podrás hacer otro pedido en {formatCooldown(cooldown.remainingMs)}.
+              </ThemedText>
+            ) : null}
+            {cancelPenalty.blocked && !cooldown.blocked ? (
+              <ThemedText style={styles.cooldown}>
+                Cancelaste un pedido. Podrás volver a pedir en {formatCooldown(cancelPenalty.remainingMs)}.
+              </ThemedText>
+            ) : null}
             <ThemedText style={styles.limit}>
               {totalItems} {totalItems === 1 ? "producto" : "productos"}
               {totalItems > 0 ? ` · máximo ${CART_LIMIT}` : ""}
@@ -161,8 +187,8 @@ export default function CartScreen() {
                           onPress={() => {
                             if (!incrementProduct(item.id)) {
                               Alert.alert(
-                                "Pedido lleno",
-                                `Solo puedes agregar ${CART_LIMIT} productos por pedido.`,
+                                "Máximo 3 productos",
+                                "Solo puedes agregar 3 productos por pedido.",
                               );
                             }
                           }}
@@ -211,8 +237,8 @@ export default function CartScreen() {
 
                 <Pressable
                   onPress={placeOrder}
-                  disabled={submitting || !isOpen}
-                  style={[styles.orderButton, (submitting || !isOpen) && styles.disabled]}
+                  disabled={submitting || !isOpen || cooldown.blocked || cancelPenalty.blocked}
+                  style={[styles.orderButton, (submitting || !isOpen || cooldown.blocked || cancelPenalty.blocked) && styles.disabled]}
                 >
                   {submitting ? (
                     <ActivityIndicator color="#fffaf5" />
@@ -221,7 +247,15 @@ export default function CartScreen() {
                   )}
                 </Pressable>
 
-                <Pressable onPress={clearCart} style={styles.clearButton}>
+                <Pressable
+                  onPress={() => {
+                    Alert.alert("Vaciar carrito", "¿Seguro? Se quitarán todos los productos.", [
+                      { text: "No" },
+                      { text: "Sí, vaciar", style: "destructive", onPress: clearCart },
+                    ]);
+                  }}
+                  style={styles.clearButton}
+                >
                   <ThemedText style={styles.clearText}>Vaciar carrito</ThemedText>
                 </Pressable>
               </>
@@ -245,6 +279,16 @@ const styles = StyleSheet.create({
   limit: { color: "#795e4d", fontSize: 16, marginBottom: 18 },
   empty: { color: "#795e4d", fontSize: 18, textAlign: "center", marginTop: 50 },
   closed: { color: "#a33a2b", fontSize: 14, lineHeight: 20, marginBottom: 16 },
+  cooldown: {
+    color: "#8a2b22",
+    backgroundColor: "#f8e8e4",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 14,
+    fontWeight: "700",
+  },
   item: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 16, padding: 12, marginBottom: 12 },
   image: { width: 70, height: 70 },
   itemInfo: { flex: 1, marginLeft: 10 },
