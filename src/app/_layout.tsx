@@ -8,6 +8,7 @@ import { OfflineGate } from "@/components/offline-gate";
 import { CafeProvider } from "@/context/cafe-context";
 import { CartProvider } from "@/context/cart-context";
 import { NetworkProvider } from "@/context/network-context";
+import { NotificationBannerProvider } from "@/context/notification-banner-context";
 import { OrdersProvider } from "@/context/orders-context";
 
 SplashScreen.preventAutoHideAsync();
@@ -17,15 +18,17 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <NetworkProvider>
-        <CartProvider>
-          <OrdersProvider>
-            <CafeProvider>
-              <AnimatedSplashOverlay />
-              <AppTabs />
-              <OfflineGate />
-            </CafeProvider>
-          </OrdersProvider>
-        </CartProvider>
+        <NotificationBannerProvider>
+          <CartProvider>
+            <OrdersProvider>
+              <CafeProvider>
+                <AnimatedSplashOverlay />
+                <AppTabs />
+                <OfflineGate />
+              </CafeProvider>
+            </OrdersProvider>
+          </CartProvider>
+        </NotificationBannerProvider>
       </NetworkProvider>
     </ThemeProvider>
   );

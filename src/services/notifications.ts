@@ -1,8 +1,11 @@
+import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 import { statusLabel, type OrderStatus } from "@/services/orders";
 
-let permissionAsked = false;
+function isExpoGo() {
+  return Constants.appOwnership === "expo";
+}
 
 export function statusMessage(status: OrderStatus, orderId: string) {
   switch (status) {
@@ -36,34 +39,9 @@ export function statusMessage(status: OrderStatus, orderId: string) {
 
 export async function notifyOrderStatus(status: OrderStatus, orderId: string) {
   const { title, body } = statusMessage(status, orderId);
-  if (Platform.OS === "web") return { title, body, usedNotification: false };
-
-  try {
-    const Notifications = await import("expo-notifications");
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
-    });
-    if (!permissionAsked) {
-      permissionAsked = true;
-      const current = await Notifications.getPermissionsAsync();
-      if (current.status !== "granted") {
-        await Notifications.requestPermissionsAsync();
-      }
-    }
-    const granted = (await Notifications.getPermissionsAsync()).status === "granted";
-    if (!granted) return { title, body, usedNotification: false };
-    await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: true },
-      trigger: null,
-    });
-    return { title, body, usedNotification: true };
-  } catch {
+  // Expo Go (SDK 53+) no permite el módulo de push; el aviso va en Alert.
+  if (Platform.OS === "web" || isExpoGo()) {
     return { title, body, usedNotification: false };
   }
+  return { title, body, usedNotification: false };
 }

@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Alert, AppState } from "react-native";
+import { AppState } from "react-native";
 
+import { useNotificationBanner } from "@/context/notification-banner-context";
 import { getDeviceId } from "@/services/device";
 import { notifyOrderStatus } from "@/services/notifications";
 import { getOrdersByDeviceId, getOrdersByIds, isOrder, type Order, type OrderStatus } from "@/services/orders";
@@ -22,6 +23,7 @@ const NAME_STORAGE_KEY = "cafetec-customer-name";
 const SEEN_NOTICES_KEY = "cafetec-seen-notices";
 
 export function OrdersProvider({ children }: { children: ReactNode }) {
+  const { showBanner } = useNotificationBanner();
   const [orders, setOrders] = useState<Order[]>([]);
   const [deviceId, setDeviceId] = useState("");
   const [lastCustomerName, setLastCustomerNameState] = useState("");
@@ -124,7 +126,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     }
     if (fresh.length) {
       AsyncStorage.setItem(SEEN_NOTICES_KEY, JSON.stringify([...seenNotices.current])).catch(() => undefined);
-      Alert.alert("Se agotó un producto", messages.join("\n\n"));
+      showBanner({ title: "Se agotó un producto", body: messages.join(" ") });
     }
 
     if (!statusHydrated.current) {
@@ -137,10 +139,10 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       lastStatus.current[order.id] = order.status;
       if (!previous || previous === order.status || order.status === "recibido") continue;
       void notifyOrderStatus(order.status, order.id).then((notice) => {
-        Alert.alert(notice.title, notice.body);
+        showBanner({ title: notice.title, body: notice.body });
       });
     }
-  }, [isLoaded, orders]);
+  }, [isLoaded, orders, showBanner]);
 
   useEffect(() => {
     if (!isSupabaseConfigured() || !isLoaded) return undefined;
